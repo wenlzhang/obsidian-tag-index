@@ -18,6 +18,7 @@ export class TagIndexView extends ItemView {
     tagContainer: HTMLElement;
     draggedTag: string | null = null;
     draggedElement: HTMLElement | null = null;
+    expandedTags: Set<string> = new Set(); // Track which tags are expanded
 
     constructor(leaf: WorkspaceLeaf, plugin: TagIndexPlugin) {
         super(leaf);
@@ -76,28 +77,56 @@ export class TagIndexView extends ItemView {
         const tagEl = this.tagContainer.createDiv({ cls: "tag-index-tag" });
         tagEl.setAttribute("data-tag", tag.name);
 
+        // Determine if this tag is expanded
+        const isExpanded = this.expandedTags.has(tag.name);
+        if (isExpanded) {
+            tagEl.addClass("tag-expanded");
+        }
+
+        // Tag container with collapse/expand icon and name
+        const tagHeader = tagEl.createDiv({ cls: "tag-index-tag-header" });
+
+        // Create expand/collapse icon
+        const collapseIcon = tagHeader.createDiv({
+            cls: "tag-index-collapse-icon",
+        });
+        setIcon(collapseIcon, isExpanded ? "chevron-down" : "chevron-right");
+
         // Tag icon and name
-        const tagNameContainer = tagEl.createDiv({ cls: "tag-index-tag-name" });
+        const tagNameContainer = tagHeader.createDiv({
+            cls: "tag-index-tag-name",
+        });
         setIcon(tagNameContainer.createSpan({ cls: "tag-index-icon" }), "tag");
         tagNameContainer.createSpan().setText(tag.name);
 
         // Remove button
-        const removeButton = tagEl.createDiv({ cls: "tag-index-remove-btn" });
+        const removeButton = tagHeader.createDiv({
+            cls: "tag-index-remove-btn",
+        });
         setIcon(removeButton, "x");
         removeButton.addEventListener("click", (e: MouseEvent) => {
             e.stopPropagation();
             this.removeTag(tag.name);
         });
 
-        // Click to show notes with this tag
-        tagEl.addEventListener("click", () => {
-            this.showNotesWithTag(tag.name);
+        // Create container for notes (initially hidden if not expanded)
+        const notesContainer = tagEl.createDiv({ cls: "tag-index-tag-notes" });
+        notesContainer.style.display = isExpanded ? "block" : "none";
+
+        // If the tag is expanded, populate the notes
+        if (isExpanded) {
+            this.populateNotesForTag(tag.name, notesContainer);
+        }
+
+        // Click to expand/collapse tag
+        tagHeader.addEventListener("click", () => {
+            this.toggleTag(tag.name, tagEl, collapseIcon, notesContainer);
         });
 
         // Make tag draggable
-        tagEl.setAttribute("draggable", "true");
+        tagHeader.setAttribute("draggable", "true");
 
-        tagEl.addEventListener("dragstart", (e: DragEvent) => {
+        tagHeader.addEventListener("dragstart", (e: DragEvent) => {
             this.draggedTag = tag.name;
             this.draggedElement = tagEl;
             tagEl.addClass("tag-being-dragged");
@@ -107,7 +136,7 @@ export class TagIndexView extends ItemView {
             }
         });
 
-        tagEl.addEventListener("dragend", () => {
+        tagHeader.addEventListener("dragend", () => {
             tagEl.removeClass("tag-being-dragged");
             this.draggedTag = null;
             this.draggedElement = null;
@@ -176,15 +205,45 @@ export class TagIndexView extends ItemView {
         this.renderTags();
     }
 
-    async showNotesWithTag(tagName: string): Promise<void> {
-        // Clear previous results
-        const notesContainer =
-            this.containerEl.querySelector(".tag-index-notes");
-        if (notesContainer) notesContainer.remove();
+    // Toggle tag expansion
+    async toggleTag(
+        tagName: string,
+        tagEl: HTMLElement,
+        collapseIcon: HTMLElement,
+        notesContainer: HTMLElement,
+    ): Promise<void> {
+        const isExpanded = this.expandedTags.has(tagName);
 
-        // Create notes container
-        const notes = this.containerEl.createDiv({ cls: "tag-index-notes" });
-        notes.createEl("h5", { text: `Notes with tag ${tagName}` });
+        if (isExpanded) {
+            // Collapse
+            this.expandedTags.delete(tagName);
+            notesContainer.style.display = "none";
+            tagEl.removeClass("tag-expanded");
+            setIcon(collapseIcon, "chevron-right");
+        } else {
+            // Expand
+            this.expandedTags.add(tagName);
+            tagEl.addClass("tag-expanded");
+            setIcon(collapseIcon, "chevron-down");
+
+            // Show loading indicator
+            notesContainer.empty();
+            notesContainer
+                .createDiv({ cls: "tag-index-loading" })
+                .setText("Loading notes...");
+            notesContainer.style.display = "block";
+
+            // Populate notes
+            await this.populateNotesForTag(tagName, notesContainer);
+        }
+    }
+
+    // Populate notes for a tag
+    async populateNotesForTag(
+        tagName: string,
+        container: HTMLElement,
+    ): Promise<void> {
+        container.empty();
 
         // Find files with the tag
         const filesWithTag = this.app.vault
@@ -203,18 +262,24 @@ export class TagIndexView extends ItemView {
             });
 
         if (filesWithTag.length === 0) {
-            notes
+            container
                 .createDiv({ cls: "tag-index-empty-note" })
                 .setText("No notes found with this tag");
             return;
         }
 
         // List files
-        const notesList = notes.createDiv({ cls: "tag-index-notes-list" });
+        const notesList = container.createDiv({ cls: "tag-index-notes-list" });
         for (const file of filesWithTag) {
             const noteItem = notesList.createDiv({
                 cls: "tag-index-note-item",
             });
+
+            // File icon
+            const noteIcon = noteItem.createDiv({ cls: "tag-index-note-icon" });
+            setIcon(noteIcon, "file-text");
+
+            // File link
             const link = noteItem.createEl("a", {
                 text: file.basename,
                 cls: "tag-index-note-link",
@@ -249,7 +314,7 @@ export class TagIndexView extends ItemView {
                         previewContent,
                         preview,
                         file.path,
-                        this,
+                        this as any,
                     );
                 } catch (error) {
                     preview.setText("Error loading preview");
@@ -259,6 +324,33 @@ export class TagIndexView extends ItemView {
             noteItem.addEventListener("mouseleave", () => {
                 preview.style.display = "none";
             });
+        }
+    }
+
+    // Deprecated - keeping for backwards compatibility
+    async showNotesWithTag(tagName: string): Promise<void> {
+        // Find the tag element
+        const tagEl = this.tagContainer.querySelector(
+            `[data-tag="${tagName}"]`,
+        );
+        if (tagEl) {
+            // Get the collapse icon and notes container
+            const collapseIcon = tagEl.querySelector(
+                ".tag-index-collapse-icon",
+            );
+            const notesContainer = tagEl.querySelector(".tag-index-tag-notes");
+
+            if (collapseIcon && notesContainer) {
+                // Expand the tag if it's not already expanded
+                if (!this.expandedTags.has(tagName)) {
+                    this.toggleTag(
+                        tagName,
+                        tagEl as HTMLElement,
+                        collapseIcon as HTMLElement,
+                        notesContainer as HTMLElement,
+                    );
+                }
+            }
         }
     }
 

@@ -16,18 +16,34 @@
 /* Tag styling */
 .tag-index-tag {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
+  flex-direction: column;
   border-radius: 4px;
   background-color: var(--background-secondary);
-  cursor: pointer;
   position: relative;
   transition: background-color 0.2s ease;
+  margin-bottom: 4px;
 }
 
-.tag-index-tag:hover {
+.tag-index-tag-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tag-index-tag-header:hover {
   background-color: var(--background-secondary-alt);
+}
+
+.tag-index-collapse-icon {
+  margin-right: 8px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
 }
 
 .tag-index-tag-name {
@@ -39,6 +55,34 @@
 
 .tag-index-icon {
   color: var(--text-accent);
+}
+
+/* Notes container within a tag */
+.tag-index-tag-notes {
+  padding-left: 28px;
+  margin: 0 0 6px 6px;
+  border-left: 1px solid var(--background-modifier-border);
+}
+
+/* Expanded tag */
+.tag-expanded > .tag-index-tag-header {
+  font-weight: 500;
+}
+
+/* Loading indicator */
+.tag-index-loading {
+  padding: 8px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+/* Empty note message */
+.tag-index-empty-note {
+  padding: 8px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9em;
 }
 
 /* Remove button */
@@ -64,24 +108,20 @@
 }
 
 /* Notes list */
-.tag-index-notes {
-  margin-top: 20px;
-  border-top: 1px solid var(--background-modifier-border);
-  padding-top: 16px;
-}
-
 .tag-index-notes-list {
-  margin-top: 10px;
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .tag-index-note-item {
   position: relative;
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 4px;
-  background-color: var(--background-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
   transition: background-color 0.2s ease;
 }
 
@@ -89,9 +129,22 @@
   background-color: var(--background-secondary-alt);
 }
 
+.tag-index-note-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
 .tag-index-note-link {
   text-decoration: none;
   color: var(--text-normal);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tag-index-note-link:hover {
