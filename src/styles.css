@@ -1,0 +1,138 @@
+/* Tag Index Container */
+.tag-index-container {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-index-empty-state {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Tag styling */
+.tag-index-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background-color: var(--background-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.tag-index-tag:hover {
+  background-color: var(--background-secondary-alt);
+}
+
+.tag-index-tag-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.tag-index-icon {
+  color: var(--text-accent);
+}
+
+/* Remove button */
+.tag-index-remove-btn {
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.tag-index-remove-btn:hover {
+  opacity: 1;
+  color: var(--text-error);
+}
+
+/* Drag and drop styles */
+.tag-being-dragged {
+  opacity: 0.5;
+  border: 1px dashed var(--text-accent);
+}
+
+.tag-drag-over {
+  border-top: 2px solid var(--text-accent);
+}
+
+/* Notes list */
+.tag-index-notes {
+  margin-top: 20px;
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 16px;
+}
+
+.tag-index-notes-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-index-note-item {
+  position: relative;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background-color: var(--background-secondary);
+  transition: background-color 0.2s ease;
+}
+
+.tag-index-note-item:hover {
+  background-color: var(--background-secondary-alt);
+}
+
+.tag-index-note-link {
+  text-decoration: none;
+  color: var(--text-normal);
+}
+
+.tag-index-note-link:hover {
+  text-decoration: underline;
+  color: var(--text-accent);
+}
+
+/* Note preview on hover */
+.tag-index-note-preview {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 0;
+  width: 300px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px;
+  border-radius: 6px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+/* Settings tab styles */
+.tag-index-instructions {
+  background-color: var(--background-secondary);
+  padding: 16px;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+
+.tag-index-instructions p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .tag-index-note-preview {
+    left: 5%;
+    top: calc(100% + 10px);
+    width: 90%;
+  }
+}

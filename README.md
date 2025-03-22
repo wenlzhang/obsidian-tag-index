@@ -1,55 +1,66 @@
-# Plugin Template
+# Obsidian Tag Index
 
-This is a template for creating plugins for [Obsidian](https://obsidian.md), maintained by [wenlzhang](https://github.com/wenlzhang).
+Tag Index is a plugin for [Obsidian](https://obsidian.md) that allows you to create a separate list of important tags for quick access. It provides a streamlined way to organize and prioritize your most-used tags.
 
-## Getting started
+## Features
 
-1. Clone this repository to your local machine
-2. Update the following files with your plugin information:
-   - `manifest.json`:
-     - `id`: Your plugin ID (in kebab-case)
-     - `name`: Your plugin name
-     - `author`: Your name
-     - `authorUrl`: Your website or GitHub profile URL
-     - `fundingUrl`: Optional funding information
-   - `package.json`:
-     - `name`: Your plugin name (should match manifest.json)
-     - `description`: Your plugin description
-     - `author`: Your name
-     - `keywords`: Relevant keywords for your plugin
+- Create a dedicated view for your important tags
+- Add tags to your index directly from the editor or default tag pane
+- Rearrange tags via drag and drop
+- Click on a tag to see all notes using that tag
+- Preview note content when hovering over note names
+
+## How to use
+
+1. Install the plugin from the Obsidian community plugins
+2. Open the Tag Index view using:
+   - The ribbon icon in the left sidebar
+   - The command palette with "Open Tag Index"
+3. Add tags to your index by:
+   - Right-clicking on tags in the editor
+   - Right-clicking on tags in the default tag pane
+   - Using the "Add tag to Tag Index" command
+4. Rearrange your tags by dragging and dropping them
+5. Click on any tag to see a list of notes that use it
+
+## Installation
+
+### From Obsidian Community Plugins
+
+1. Open Obsidian Settings > Community plugins
+2. Disable Safe mode if prompted
+3. Click Browse and search for "Tag Index"
+4. Click Install and then Enable
+
+### Manual installation
+
+1. Download the latest release from the [releases page](https://github.com/wenlzhang/obsidian-tag-index/releases)
+2. Extract the zip into your Obsidian vault's `.obsidian/plugins` folder
+3. Reload Obsidian (Ctrl/Cmd + R)
+4. Enable the plugin in Obsidian settings
 
 ## Development
 
-1. Install dependencies:
+1. Clone this repository to your local machine
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Start development server:
+3. Start development server:
 ```bash
 npm run dev
 ```
 
-3. Build the plugin:
+4. Build the plugin:
 ```bash
 npm run build
 ```
 
-## Testing your plugin
+## Support
 
-1. Create a test vault in Obsidian
-2. Create a `.obsidian/plugins` folder in your test vault
-3. Copy your plugin folder into the plugins folder
-4. Reload Obsidian to load the plugin (Ctrl/Cmd + R)
-5. Enable the plugin in Obsidian's settings
+If you encounter any issues or have suggestions for improvements, please open an issue on the [GitHub repository](https://github.com/wenlzhang/obsidian-tag-index/issues).
 
-## Publishing your plugin
-
-1. Update `versions.json` with your plugin's version history
-2. Test your plugin thoroughly
-3. Create a GitHub release
-4. Submit your plugin to the Obsidian Plugin Gallery
-
-## Support me
+## Support the developer
 
 <a href='https://ko-fi.com/C0C66C1TB' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi1.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>

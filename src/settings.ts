@@ -1,10 +1,14 @@
-import { App } from 'obsidian';
+import { App } from "obsidian";
 
-export interface PluginSettings {
-    // Add your settings properties here
-    exampleSetting: string;
+export interface ImportantTag {
+    name: string;
+    position: number;
 }
 
-export const DEFAULT_SETTINGS: PluginSettings = {
-    exampleSetting: 'default'
+export interface TagIndexSettings {
+    importantTags: ImportantTag[];
+}
+
+export const DEFAULT_SETTINGS: TagIndexSettings = {
+    importantTags: [],
 };
