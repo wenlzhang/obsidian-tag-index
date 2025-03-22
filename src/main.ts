@@ -11,11 +11,13 @@ import {
     Events,
     Editor,
     FuzzyMatch,
+    Point,
+    EditorPosition,
+    TagCache,
 } from "obsidian";
 import { TagIndexSettings, DEFAULT_SETTINGS, ImportantTag } from "./settings";
 import { TagIndexView, TAG_INDEX_VIEW_TYPE } from "./tagIndexView";
 import { TagIndexSettingTab } from "./settingsTab";
-import "./styles.css";
 
 export default class TagIndexPlugin extends Plugin {
     settings: TagIndexSettings;
@@ -58,58 +60,102 @@ export default class TagIndexPlugin extends Plugin {
 
         // Add context menu item to tags in editor
         this.registerEvent(
-            // @ts-ignore - Obsidian typings are incomplete here
             this.app.workspace.on(
                 "editor-menu",
                 (menu: Menu, editor: Editor, view: MarkdownView) => {
-                    // Get the text under the cursor
+                    if (!view.file) return;
+
+                    // Get cursor position
                     const cursor = editor.getCursor();
-                    const line = editor.getLine(cursor.line);
 
-                    // Check if there's a tag at the cursor position
-                    const tagMatch = /#[\w\/-]+/.exec(
-                        line.slice(cursor.ch - 20, cursor.ch + 20),
+                    // Use Obsidian's metadata to find tags
+                    const cache = this.app.metadataCache.getFileCache(
+                        view.file,
                     );
-                    if (!tagMatch) return;
+                    if (!cache || !cache.tags) return;
 
-                    menu.addItem((item: MenuItem) => {
-                        item.setTitle("Add to Tag Index")
-                            .setIcon("plus")
-                            .onClick(() => {
-                                this.addTagToIndex(tagMatch[0]);
-                            });
-                    });
+                    // Find if cursor is within a tag position
+                    const tagUnderCursor = this.findTagAtPosition(
+                        cache.tags,
+                        cursor,
+                    );
+
+                    if (tagUnderCursor) {
+                        menu.addItem((item: MenuItem) => {
+                            item.setTitle("Add to Tag Index")
+                                .setIcon("plus")
+                                .onClick(() => {
+                                    this.addTagToIndex(tagUnderCursor);
+                                });
+                        });
+                    }
                 },
             ),
         );
 
-        // Add context menu item to tags in tag pane
-        this.registerEvent(
-            // @ts-ignore - Obsidian typings are incomplete here
-            this.app.workspace.on(
-                "file-menu",
-                (menu: Menu, file: TFile, source: string) => {
-                    // Check if it's from the tag pane
-                    if (source !== "tag-pane") return;
-
-                    // Add the menu item
-                    menu.addItem((item: MenuItem) => {
-                        item.setTitle("Add to Tag Index")
-                            .setIcon("plus")
-                            .onClick(() => {
-                                // Get the tag name from the context
-                                if (file && typeof file === "string") {
-                                    this.addTagToIndex(file);
-                                }
-                            });
-                    });
-                },
-            ),
-        );
+        // Setup the tag pane context menu
+        this.setupTagPaneContextMenu();
 
         // Try to activate view after plugin is loaded
         this.app.workspace.onLayoutReady(() => {
             this.activateView();
+        });
+    }
+
+    // Helper to find a tag at the cursor position
+    findTagAtPosition(
+        tags: TagCache[],
+        position: EditorPosition,
+    ): string | null {
+        for (const tag of tags) {
+            // Check if position is within tag boundaries
+            if (
+                // Same line
+                tag.position.start.line === position.line &&
+                tag.position.end.line === position.line &&
+                // Within column range
+                tag.position.start.col <= position.ch &&
+                tag.position.end.col >= position.ch
+            ) {
+                return tag.tag;
+            }
+        }
+        return null;
+    }
+
+    setupTagPaneContextMenu() {
+        // We need to observe the DOM to find tag elements
+        this.registerDomEvent(document, "contextmenu", (event: MouseEvent) => {
+            // Check if this is a tag in the tag pane
+            const element = event.target as HTMLElement;
+            const tagElement = element.closest(".tag-pane-tag");
+
+            if (tagElement) {
+                // This is a tag in the tag pane
+                event.preventDefault();
+
+                // Get the tag name
+                const tagName = tagElement.textContent?.trim();
+                if (!tagName) return;
+
+                // Create and show context menu
+                const menu = new Menu();
+
+                menu.addItem((item: MenuItem) => {
+                    item.setTitle("Add to Tag Index")
+                        .setIcon("plus")
+                        .onClick(() => {
+                            // Add the # prefix if needed
+                            const tagToAdd = tagName.startsWith("#")
+                                ? tagName
+                                : `#${tagName}`;
+                            this.addTagToIndex(tagToAdd);
+                        });
+                });
+
+                // Show the menu at the cursor position
+                menu.showAtMouseEvent(event);
+            }
         });
     }
 

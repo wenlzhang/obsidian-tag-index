@@ -45,6 +45,7 @@ try {
             '@lezer/common',
             '@lezer/highlight',
             '@lezer/lr',
+            '*.css', // Treat all CSS files as external to prevent bundling
             ...builtins
         ],
         format: 'cjs',
