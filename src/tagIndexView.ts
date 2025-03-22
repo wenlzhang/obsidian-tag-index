@@ -259,16 +259,42 @@ export class TagIndexView extends ItemView {
             .getMarkdownFiles()
             .filter((file: TFile) => {
                 const cache = this.app.metadataCache.getFileCache(file);
-                if (!cache || !cache.tags) return false;
+                if (!cache) return false;
 
-                // In Obsidian's metadata cache, tags are stored with the # prefix
-                const tagWithHash = `#${tagNameWithoutHash}`;
+                // Check both inline tags and frontmatter tags
 
-                // Check if any tag in the file matches our search tag
-                return cache.tags.some((tagCache) => {
-                    // Compare with the raw tag (which includes the #)
-                    return tagCache.tag === tagWithHash;
-                });
+                // 1. Check inline tags in content (stored with # prefix in cache.tags)
+                if (cache.tags) {
+                    const hasInlineTag = cache.tags.some((tagCache) => {
+                        // Tags in content are stored with # prefix
+                        return tagCache.tag === `#${tagNameWithoutHash}`;
+                    });
+
+                    if (hasInlineTag) return true;
+                }
+
+                // 2. Check frontmatter tags (stored in cache.frontmatter.tags)
+                if (cache.frontmatter && cache.frontmatter.tags) {
+                    // Frontmatter tags can be a string or an array
+                    const frontmatterTags = cache.frontmatter.tags;
+
+                    if (Array.isArray(frontmatterTags)) {
+                        // If it's an array of tags
+                        return frontmatterTags.some(
+                            (tag) =>
+                                // In frontmatter, tags are stored without # prefix
+                                tag === tagNameWithoutHash,
+                        );
+                    } else if (typeof frontmatterTags === "string") {
+                        // If it's a comma-separated string
+                        return frontmatterTags
+                            .split(",")
+                            .map((t) => t.trim())
+                            .includes(tagNameWithoutHash);
+                    }
+                }
+
+                return false;
             });
 
         // Debug log the results
