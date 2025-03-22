@@ -124,39 +124,79 @@ export default class TagIndexPlugin extends Plugin {
     }
 
     setupTagPaneContextMenu() {
-        // We need to observe the DOM to find tag elements
-        this.registerDomEvent(document, "contextmenu", (event: MouseEvent) => {
-            // Check if this is a tag in the tag pane
-            const element = event.target as HTMLElement;
-            const tagElement = element.closest(".tag-pane-tag");
+        // This handler function gets the same menu that Tag Wrangler uses
+        const handleContextMenu = (event: MouseEvent, target: HTMLElement) => {
+            // Get the tag name
+            const tagName = target.textContent?.trim();
+            if (!tagName) return;
 
-            if (tagElement) {
-                // This is a tag in the tag pane
-                event.preventDefault();
+            // Get or create a menu for this event
+            let menu: Menu;
 
-                // Get the tag name
-                const tagName = tagElement.textContent?.trim();
-                if (!tagName) return;
+            // Check if Obsidian's Menu.forEvent is available (newer API)
+            if ((Menu as any).forEvent) {
+                // Get the menu from the event (which Tag Wrangler would also use)
+                menu =
+                    (event as any).obsidian_contextmenu ||
+                    (Menu as any).forEvent(event);
+                (event as any).obsidian_contextmenu = menu;
+            } else {
+                // For older Obsidian versions, use the event property approach
+                menu = (event as any).obsidian_contextmenu;
+                if (!menu) {
+                    menu = new Menu();
+                    (event as any).obsidian_contextmenu = menu;
 
-                // Create and show context menu
-                const menu = new Menu();
-
-                menu.addItem((item: MenuItem) => {
-                    item.setTitle("Add to Tag Index")
-                        .setIcon("plus")
-                        .onClick(() => {
-                            // Add the # prefix if needed
-                            const tagToAdd = tagName.startsWith("#")
-                                ? tagName
-                                : `#${tagName}`;
-                            this.addTagToIndex(tagToAdd);
-                        });
-                });
-
-                // Show the menu at the cursor position
-                menu.showAtMouseEvent(event);
+                    // Show the menu after a brief delay (allows other plugins to add their items)
+                    setTimeout(() => {
+                        menu.showAtPosition({ x: event.pageX, y: event.pageY });
+                    }, 0);
+                }
             }
-        });
+
+            // Add our item to the menu
+            menu.addItem((item: MenuItem) => {
+                item.setTitle("Add to Tag Index")
+                    .setIcon("plus")
+                    .onClick(() => {
+                        // Add the # prefix if needed
+                        const tagToAdd = tagName.startsWith("#")
+                            ? tagName
+                            : `#${tagName}`;
+                        this.addTagToIndex(tagToAdd);
+                    });
+            });
+        };
+
+        // Use onElement pattern similar to Tag Wrangler
+        const onElement = (
+            el: Document,
+            event: string,
+            selector: string,
+            callback: (e: MouseEvent, target: HTMLElement) => void,
+            options: { capture: boolean },
+        ) => {
+            const handler = (e: MouseEvent) => {
+                const target = (e.target as HTMLElement).closest(
+                    selector,
+                ) as HTMLElement;
+                if (target) callback(e, target);
+            };
+
+            el.addEventListener(event, handler, options);
+            return () => el.removeEventListener(event, handler, options);
+        };
+
+        // Register with event capturing (exactly like Tag Wrangler)
+        this.register(
+            onElement(
+                document,
+                "contextmenu",
+                ".tag-pane-tag",
+                handleContextMenu,
+                { capture: true },
+            ),
+        );
     }
 
     async loadSettings() {
