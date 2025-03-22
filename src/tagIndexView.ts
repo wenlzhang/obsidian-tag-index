@@ -96,7 +96,6 @@ export class TagIndexView extends ItemView {
         const tagNameContainer = tagHeader.createDiv({
             cls: "tag-index-tag-name",
         });
-        setIcon(tagNameContainer.createSpan({ cls: "tag-index-icon" }), "tag");
         tagNameContainer.createSpan().setText(tag.name);
 
         // Remove button on the right
@@ -247,24 +246,35 @@ export class TagIndexView extends ItemView {
     ): Promise<void> {
         container.empty();
 
-        // Extract just the tag name without the count that appears in the tag pane
-        const cleanTagName = tagName.split(" ")[0];
+        // Get the clean tag name without any hash
+        const tagNameWithoutHash = tagName.startsWith("#")
+            ? tagName.substring(1)
+            : tagName;
 
-        // Find files with the tag
+        // Log for debugging
+        console.log("Searching for notes with tag:", tagNameWithoutHash);
+
+        // Find files with the tag by searching the metadata cache
         const filesWithTag = this.app.vault
             .getMarkdownFiles()
             .filter((file: TFile) => {
                 const cache = this.app.metadataCache.getFileCache(file);
                 if (!cache || !cache.tags) return false;
 
-                // Check if the tag matches
-                const tagWithHash = cleanTagName.startsWith("#")
-                    ? cleanTagName
-                    : `#${cleanTagName}`;
-                return cache.tags.some(
-                    (tagCache: TagCache) => tagCache.tag === tagWithHash,
-                );
+                // In Obsidian's metadata cache, tags are stored with the # prefix
+                const tagWithHash = `#${tagNameWithoutHash}`;
+
+                // Check if any tag in the file matches our search tag
+                return cache.tags.some((tagCache) => {
+                    // Compare with the raw tag (which includes the #)
+                    return tagCache.tag === tagWithHash;
+                });
             });
+
+        // Debug log the results
+        console.log(
+            `Found ${filesWithTag.length} files with tag ${tagNameWithoutHash}`,
+        );
 
         if (filesWithTag.length === 0) {
             container
@@ -328,6 +338,43 @@ export class TagIndexView extends ItemView {
         }
     }
 
+    async addTag(tagName: string): Promise<void> {
+        // Store the tag name consistently without the # prefix
+        let cleanTagName = tagName;
+
+        // Remove # if present
+        if (cleanTagName.startsWith("#")) {
+            cleanTagName = cleanTagName.substring(1);
+        }
+
+        // Remove any trailing numbers (for tag pane tags)
+        cleanTagName = cleanTagName.replace(/\d+$/, "");
+
+        // Trim any whitespace
+        cleanTagName = cleanTagName.trim();
+
+        console.log("Adding tag to index:", cleanTagName);
+
+        // Check if tag already exists
+        if (
+            this.plugin.settings.importantTags.some(
+                (t: ImportantTag) => t.name === cleanTagName,
+            )
+        ) {
+            return;
+        }
+
+        // Add tag with position at the end
+        const newPosition = this.plugin.settings.importantTags.length;
+        this.plugin.settings.importantTags.push({
+            name: cleanTagName,
+            position: newPosition,
+        });
+
+        await this.plugin.saveSettings();
+        this.renderTags();
+    }
+
     // Deprecated - keeping for backwards compatibility
     async showNotesWithTag(tagName: string): Promise<void> {
         // Find the tag element
@@ -353,35 +400,6 @@ export class TagIndexView extends ItemView {
                 }
             }
         }
-    }
-
-    async addTag(tagName: string): Promise<void> {
-        // Remove # if present
-        if (tagName.startsWith("#")) {
-            tagName = tagName.substring(1);
-        }
-
-        // Extract just the tag name without the count that appears in the tag pane
-        const cleanTagName = tagName.split(" ")[0];
-
-        // Check if tag already exists
-        if (
-            this.plugin.settings.importantTags.some(
-                (t: ImportantTag) => t.name === cleanTagName,
-            )
-        ) {
-            return;
-        }
-
-        // Add tag with position at the end
-        const newPosition = this.plugin.settings.importantTags.length;
-        this.plugin.settings.importantTags.push({
-            name: cleanTagName,
-            position: newPosition,
-        });
-
-        await this.plugin.saveSettings();
-        this.renderTags();
     }
 
     onMenu(menu: Menu): void {

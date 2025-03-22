@@ -126,8 +126,25 @@ export default class TagIndexPlugin extends Plugin {
     setupTagPaneContextMenu() {
         // This handler function gets the same menu that Tag Wrangler uses
         const handleContextMenu = (event: MouseEvent, target: HTMLElement) => {
-            // Get the tag name
-            const tagName = target.textContent?.trim();
+            // In the tag pane, the data-tag attribute contains the actual tag name
+            const dataTag = target.getAttribute("data-tag");
+
+            // If data-tag is available, use it (this is the clean tag name)
+            // Otherwise, try to extract from text content
+            let tagName = dataTag;
+
+            // Fallback: try to extract from text content if data-tag is not available
+            if (!tagName) {
+                const tagText = target.textContent?.trim();
+                if (!tagText) return;
+
+                // Extract the tag name using the pattern approach
+                // Tag names in the tag pane can appear as "tagname" with a count appended
+                // without spaces (like "tagname123")
+                const match = tagText.match(/^([^0-9]+)/);
+                tagName = match ? match[1].trim() : tagText;
+            }
+
             if (!tagName) return;
 
             // Get or create a menu for this event
@@ -168,35 +185,28 @@ export default class TagIndexPlugin extends Plugin {
             });
         };
 
-        // Use onElement pattern similar to Tag Wrangler
-        const onElement = (
-            el: Document,
-            event: string,
-            selector: string,
-            callback: (e: MouseEvent, target: HTMLElement) => void,
-            options: { capture: boolean },
-        ) => {
-            const handler = (e: MouseEvent) => {
-                const target = (e.target as HTMLElement).closest(
-                    selector,
-                ) as HTMLElement;
-                if (target) callback(e, target);
-            };
-
-            el.addEventListener(event, handler, options);
-            return () => el.removeEventListener(event, handler, options);
+        // Create a context menu handler function
+        const contextMenuHandler = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (target && target.closest && target.closest(".tag-pane-tag")) {
+                handleContextMenu(
+                    event,
+                    target.closest(".tag-pane-tag") as HTMLElement,
+                );
+            }
         };
 
-        // Register with event capturing (exactly like Tag Wrangler)
-        this.register(
-            onElement(
-                document,
+        // Add event listener with capture phase (true)
+        document.addEventListener("contextmenu", contextMenuHandler, true);
+
+        // Register a function to remove the event listener when the plugin is disabled
+        this.register(() => {
+            document.removeEventListener(
                 "contextmenu",
-                ".tag-pane-tag",
-                handleContextMenu,
-                { capture: true },
-            ),
-        );
+                contextMenuHandler,
+                true,
+            );
+        });
     }
 
     async loadSettings() {
