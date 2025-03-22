@@ -83,7 +83,7 @@ export class TagIndexView extends ItemView {
             tagEl.addClass("tag-expanded");
         }
 
-        // Tag container with collapse/expand icon and name
+        // Tag header container (single row with all controls)
         const tagHeader = tagEl.createDiv({ cls: "tag-index-tag-header" });
 
         // Create expand/collapse icon
@@ -92,14 +92,14 @@ export class TagIndexView extends ItemView {
         });
         setIcon(collapseIcon, isExpanded ? "chevron-down" : "chevron-right");
 
-        // Tag icon and name
+        // Tag icon and name in the center
         const tagNameContainer = tagHeader.createDiv({
             cls: "tag-index-tag-name",
         });
         setIcon(tagNameContainer.createSpan({ cls: "tag-index-icon" }), "tag");
         tagNameContainer.createSpan().setText(tag.name);
 
-        // Remove button
+        // Remove button on the right
         const removeButton = tagHeader.createDiv({
             cls: "tag-index-remove-btn",
         });
@@ -110,7 +110,9 @@ export class TagIndexView extends ItemView {
         });
 
         // Create container for notes (initially hidden if not expanded)
-        const notesContainer = tagEl.createDiv({ cls: "tag-index-tag-notes" });
+        const notesContainer = tagEl.createDiv({
+            cls: "tag-index-tag-notes",
+        });
         notesContainer.style.display = isExpanded ? "block" : "none";
 
         // If the tag is expanded, populate the notes
@@ -245,6 +247,9 @@ export class TagIndexView extends ItemView {
     ): Promise<void> {
         container.empty();
 
+        // Extract just the tag name without the count that appears in the tag pane
+        const cleanTagName = tagName.split(" ")[0];
+
         // Find files with the tag
         const filesWithTag = this.app.vault
             .getMarkdownFiles()
@@ -253,9 +258,9 @@ export class TagIndexView extends ItemView {
                 if (!cache || !cache.tags) return false;
 
                 // Check if the tag matches
-                const tagWithHash = tagName.startsWith("#")
-                    ? tagName
-                    : `#${tagName}`;
+                const tagWithHash = cleanTagName.startsWith("#")
+                    ? cleanTagName
+                    : `#${cleanTagName}`;
                 return cache.tags.some(
                     (tagCache: TagCache) => tagCache.tag === tagWithHash,
                 );
@@ -275,11 +280,7 @@ export class TagIndexView extends ItemView {
                 cls: "tag-index-note-item",
             });
 
-            // File icon
-            const noteIcon = noteItem.createDiv({ cls: "tag-index-note-icon" });
-            setIcon(noteIcon, "file-text");
-
-            // File link
+            // File link (no icon)
             const link = noteItem.createEl("a", {
                 text: file.basename,
                 cls: "tag-index-note-link",
@@ -360,10 +361,13 @@ export class TagIndexView extends ItemView {
             tagName = tagName.substring(1);
         }
 
+        // Extract just the tag name without the count that appears in the tag pane
+        const cleanTagName = tagName.split(" ")[0];
+
         // Check if tag already exists
         if (
             this.plugin.settings.importantTags.some(
-                (t: ImportantTag) => t.name === tagName,
+                (t: ImportantTag) => t.name === cleanTagName,
             )
         ) {
             return;
@@ -372,7 +376,7 @@ export class TagIndexView extends ItemView {
         // Add tag with position at the end
         const newPosition = this.plugin.settings.importantTags.length;
         this.plugin.settings.importantTags.push({
-            name: tagName,
+            name: cleanTagName,
             position: newPosition,
         });
 

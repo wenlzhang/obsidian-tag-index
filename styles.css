@@ -30,6 +30,7 @@
   padding: 6px 12px;
   cursor: pointer;
   border-radius: 4px;
+  justify-content: space-between;
 }
 
 .tag-index-tag-header:hover {
@@ -37,13 +38,13 @@
 }
 
 .tag-index-collapse-icon {
-  margin-right: 8px;
   color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   width: 16px;
   height: 16px;
+  margin-right: 4px;
 }
 
 .tag-index-tag-name {
@@ -59,8 +60,8 @@
 
 /* Notes container within a tag */
 .tag-index-tag-notes {
-  padding-left: 28px;
-  margin: 0 0 6px 6px;
+  padding-left: 32px;
+  margin: 4px 0 4px 0;
   border-left: 1px solid var(--background-modifier-border);
 }
 
@@ -90,6 +91,9 @@
   opacity: 0.6;
   cursor: pointer;
   transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tag-index-remove-btn:hover {
@@ -109,7 +113,7 @@
 
 /* Notes list */
 .tag-index-notes-list {
-  margin-top: 6px;
+  margin-top: 4px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -121,21 +125,11 @@
   border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 6px;
   transition: background-color 0.2s ease;
 }
 
 .tag-index-note-item:hover {
   background-color: var(--background-secondary-alt);
-}
-
-.tag-index-note-icon {
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
 }
 
 .tag-index-note-link {
