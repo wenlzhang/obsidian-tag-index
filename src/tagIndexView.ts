@@ -42,8 +42,16 @@ export class TagIndexView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
 
-        container.createEl("h4", { text: "Important tags" });
-
+        // Create a minimal header with an icon instead of the text heading
+        const headerContainer = container.createDiv({ cls: "tag-index-header" });
+        
+        // Add a small info icon that can show a tooltip on hover
+        const infoIcon = headerContainer.createSpan({ cls: "tag-index-info-icon" });
+        setIcon(infoIcon, "info");
+        
+        // Use a single title attribute for the tooltip
+        infoIcon.setAttribute("title", "Important tags from Tag Index");
+        
         this.tagContainer = container.createDiv({ cls: "tag-index-container" });
 
         this.renderTags();

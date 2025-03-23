@@ -1,6 +1,6 @@
 /* Tag Index Container */
 .tag-index-container {
-  margin-top: 12px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -56,6 +56,26 @@
 
 .tag-index-icon {
   color: var(--text-accent);
+}
+
+/* Header styling */
+.tag-index-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px;
+  margin-top: 8px;
+}
+
+.tag-index-info-icon {
+  color: var(--text-muted);
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.tag-index-info-icon:hover {
+  opacity: 1;
+  color: var(--text-normal);
 }
 
 /* Notes container within a tag */
