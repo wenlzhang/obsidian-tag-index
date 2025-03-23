@@ -138,10 +138,33 @@ export default class TagIndexPlugin extends Plugin {
                 const tagText = target.textContent?.trim();
                 if (!tagText) return;
 
-                // Look for a space followed by a number (likely the tag count)
-                // This preserves numbers that are part of the tag name itself
-                const match = tagText.match(/^(.*?)(?:\s+\d+)?$/);
-                tagName = match ? match[1].trim() : tagText;
+                // First, check for a space followed by a number (common tag pane format)
+                const spaceNumberMatch = tagText.match(/^(.*?)\s+\d+$/);
+                if (spaceNumberMatch) {
+                    // If there's a space followed by a number, use the part before
+                    tagName = spaceNumberMatch[1].trim();
+                } else {
+                    // For tags without spaces (like "DVTLCanvas10"),
+                    // check for known tag patterns in the vault
+                    const withoutNumberPattern = tagText.match(/^([a-zA-Z0-9_\-\/]+?)(\d+)$/);
+                    
+                    if (withoutNumberPattern) {
+                        // Check if this is a valid tag in the vault (without the numbers)
+                        const possibleTag = withoutNumberPattern[1];
+                        const allTags = this.getAllTags();
+                        
+                        // If the tag without numbers exists in the vault, use that
+                        // Otherwise keep the full name including numbers
+                        if (allTags.includes(`#${possibleTag}`)) {
+                            tagName = possibleTag;
+                        } else {
+                            tagName = tagText;
+                        }
+                    } else {
+                        // Default to the full text content if no patterns match
+                        tagName = tagText;
+                    }
+                }
             }
 
             if (!tagName) return;

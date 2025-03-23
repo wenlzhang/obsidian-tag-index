@@ -373,11 +373,22 @@ export class TagIndexView extends ItemView {
             cleanTagName = cleanTagName.substring(1);
         }
 
-        // Remove any trailing numbers (for tag pane tags)
-        cleanTagName = cleanTagName.replace(/\d+$/, "");
-
         // Trim any whitespace
         cleanTagName = cleanTagName.trim();
+        
+        // SPECIAL HANDLING FOR OBSIDIAN TAG PANE
+        // Only process tags that are likely from the Obsidian tag pane
+        
+        // Check for the space-number pattern (clear indicator of tag pane source)
+        const spaceNumberMatch = cleanTagName.match(/^(.*?)\s+\d+$/);
+        if (spaceNumberMatch) {
+            // This is definitely from the tag pane - extract just the tag name
+            cleanTagName = spaceNumberMatch[1].trim();
+        }
+        
+        // For other patterns (like direct number appending without a space),
+        // we assume they were already processed properly in the context menu handler
+        // or they are legitimate tag names with numbers
 
         console.log("Adding tag to index:", cleanTagName);
         console.log("Current addTagsToTop setting:", this.plugin.settings.addTagsToTop);
