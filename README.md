@@ -9,6 +9,7 @@ Tag Index is a plugin for [Obsidian](https://obsidian.md) that allows you to cre
 - Rearrange tags via drag and drop
 - Click on a tag to see all notes using that tag
 - Preview note content when hovering over note names
+- User notifications when adding tags or when tags already exist
 
 ## How to use
 
@@ -22,6 +23,20 @@ Tag Index is a plugin for [Obsidian](https://obsidian.md) that allows you to cre
    - Using the "Add tag to Tag Index" command
 4. Rearrange your tags by dragging and dropping them
 5. Click on any tag to see a list of notes that use it
+6. **Hover over a note name to preview its content**
+
+## Tag handling
+
+The plugin intelligently handles tag names in various formats:
+
+- The plugin provides notifications when:
+  - A tag is successfully added to the index
+  - You attempt to add a tag that already exists in the index
+  - The Tag Index view is not active when trying to add a tag
+
+## Settings
+
+- **Add new tags to top**: When enabled, new tags will be added to the top of the tag list. When disabled, they will be added to the bottom.
 
 ## Installation
 

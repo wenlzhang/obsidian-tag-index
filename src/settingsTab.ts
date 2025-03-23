@@ -33,26 +33,5 @@ export class TagIndexSettingTab extends PluginSettingTab {
                     }
                 })
             );
-
-        containerEl.createEl("h3", { text: "How to use" });
-
-        const instructions = containerEl.createEl("div", {
-            cls: "tag-index-instructions",
-        });
-        instructions.createEl("p", {
-            text: "1. Open the Tag Index view using the ribbon icon or command.",
-        });
-        instructions.createEl("p", {
-            text: "2. Add tags by right-clicking on them in the editor or in the default tag pane.",
-        });
-        instructions.createEl("p", {
-            text: '3. You can also use the "Add tag to Tag Index" command.',
-        });
-        instructions.createEl("p", {
-            text: "4. Rearrange tags by dragging and dropping them.",
-        });
-        instructions.createEl("p", {
-            text: "5. Click on a tag to see notes that use it.",
-        });
     }
 }
