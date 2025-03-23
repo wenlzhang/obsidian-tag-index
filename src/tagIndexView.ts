@@ -373,11 +373,18 @@ export class TagIndexView extends ItemView {
             cleanTagName = cleanTagName.substring(1);
         }
 
-        // Remove any trailing numbers (for tag pane tags)
-        cleanTagName = cleanTagName.replace(/\d+$/, "");
-
+        // Extract the actual tag name - keep all alphanumeric characters
+        // Without removing trailing numbers which could be part of the actual tag name
+        
         // Trim any whitespace
         cleanTagName = cleanTagName.trim();
+        
+        // If there's a space followed by a number, that's likely the tag count display
+        // from the tag pane (but only if there's a space, not for tags like "tag11")
+        const spaceThenNumberMatch = cleanTagName.match(/^(.*?)\s+\d+$/);
+        if (spaceThenNumberMatch) {
+            cleanTagName = spaceThenNumberMatch[1].trim();
+        }
 
         console.log("Adding tag to index:", cleanTagName);
 

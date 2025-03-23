@@ -138,10 +138,9 @@ export default class TagIndexPlugin extends Plugin {
                 const tagText = target.textContent?.trim();
                 if (!tagText) return;
 
-                // Extract the tag name using the pattern approach
-                // Tag names in the tag pane can appear as "tagname" with a count appended
-                // without spaces (like "tagname123")
-                const match = tagText.match(/^([^0-9]+)/);
+                // Look for a space followed by a number (likely the tag count)
+                // This preserves numbers that are part of the tag name itself
+                const match = tagText.match(/^(.*?)(?:\s+\d+)?$/);
                 tagName = match ? match[1].trim() : tagText;
             }
 
