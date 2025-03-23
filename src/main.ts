@@ -33,7 +33,7 @@ export default class TagIndexPlugin extends Plugin {
         });
 
         // Add ribbon icon for opening tag index
-        this.addRibbonIcon("tag", "Open Tag Index", () => {
+        this.addRibbonIcon("hash", "Open Tag Index", () => {
             this.activateView();
         });
 
@@ -385,7 +385,7 @@ class TagSuggestModal extends FuzzySuggestModal<string> {
     renderSuggestion(match: FuzzyMatch<string>, el: HTMLElement): void {
         const container = el.createDiv({ cls: "suggestion-item" });
         const icon = container.createDiv({ cls: "suggestion-icon" });
-        setIcon(icon, "tag");
+        setIcon(icon, "hash");
 
         container.createDiv({
             cls: "suggestion-content",

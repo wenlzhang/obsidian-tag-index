@@ -35,7 +35,7 @@ export class TagIndexView extends ItemView {
     }
 
     getIcon(): string {
-        return "tag";
+        return "hash";
     }
 
     async onOpen(): Promise<void> {
