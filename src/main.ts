@@ -321,18 +321,18 @@ export default class TagIndexPlugin extends Plugin {
         
         // Show appropriate notification based on the result
         if (success) {
-            // Clean the tag name for display (remove # if present)
+            // Clean the tag name for display (ensure it has a hashtag)
             const displayName = tagName.startsWith("#") ? tagName : `#${tagName}`;
-            new Notice(`Tag "${displayName}" added to tag index.`);
+            new Notice(`${displayName} added to Tag Index.`);
         } else {
-            // Extract the clean tag name for the notification
+            // Extract the clean tag name for the notification (ensure it has a hashtag)
             let cleanTagName = tagName;
-            if (cleanTagName.startsWith("#")) {
-                cleanTagName = cleanTagName.substring(1);
+            if (!cleanTagName.startsWith("#")) {
+                cleanTagName = `#${cleanTagName}`;
             }
             cleanTagName = cleanTagName.trim();
             
-            new Notice(`Tag "#${cleanTagName}" already exists in the tag index.`);
+            new Notice(`${cleanTagName} already exists in Tag Index.`);
         }
     }
 
