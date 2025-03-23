@@ -2,7 +2,7 @@
 
 [![GitHub release (Latest by date)](https://img.shields.io/github/v/release/wenlzhang/obsidian-tag-index)](https://github.com/wenlzhang/obsidian-tag-index/releases) ![GitHub all releases](https://img.shields.io/github/downloads/wenlzhang/obsidian-tag-index/total?color=success)
 
-An [Obsidian](https://obsidian.md) plugin that helps create a curated list of your most important tags for quick access and better organization.
+An [Obsidian](https://obsidian.md) plugin that creates a curated list of important tags to serve as meaningful entry points to your knowledge base.
 
 ## Features
 
