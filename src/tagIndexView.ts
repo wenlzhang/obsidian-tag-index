@@ -373,9 +373,6 @@ export class TagIndexView extends ItemView {
             cleanTagName = cleanTagName.substring(1);
         }
 
-        // Extract the actual tag name - keep all alphanumeric characters
-        // Without removing trailing numbers which could be part of the actual tag name
-        
         // Trim any whitespace
         cleanTagName = cleanTagName.trim();
         
@@ -387,6 +384,7 @@ export class TagIndexView extends ItemView {
         }
 
         console.log("Adding tag to index:", cleanTagName);
+        console.log("Current addTagsToTop setting:", this.plugin.settings.addTagsToTop);
 
         // Check if tag already exists
         if (
@@ -394,17 +392,52 @@ export class TagIndexView extends ItemView {
                 (t: ImportantTag) => t.name === cleanTagName,
             )
         ) {
+            console.log("Tag already exists, not adding:", cleanTagName);
             return;
         }
 
-        // Add tag with position at the end
-        const newPosition = this.plugin.settings.importantTags.length;
-        this.plugin.settings.importantTags.push({
-            name: cleanTagName,
-            position: newPosition,
-        });
+        // Create a new array with a shallow copy of the existing tags
+        const importantTags = [...this.plugin.settings.importantTags];
+        
+        if (this.plugin.settings.addTagsToTop) {
+            console.log("Adding tag to top:", cleanTagName);
+            
+            // When adding to top, we need to increment all positions first
+            for (let i = 0; i < importantTags.length; i++) {
+                importantTags[i].position += 1;
+            }
+            
+            // Then add the new tag at position 0
+            const newTag = {
+                name: cleanTagName,
+                position: 0,
+            };
+            
+            // Add to the beginning of the array
+            importantTags.unshift(newTag);
+        } else {
+            console.log("Adding tag to bottom:", cleanTagName);
+            
+            // When adding to bottom, position is the length of the current array
+            const newPosition = importantTags.length;
+            const newTag = {
+                name: cleanTagName,
+                position: newPosition,
+            };
+            
+            // Add to the end of the array
+            importantTags.push(newTag);
+        }
+        
+        // Update the settings with the modified array
+        this.plugin.settings.importantTags = importantTags;
+        
+        // Log current tags after modification
+        console.log("Tags after adding:", JSON.stringify(this.plugin.settings.importantTags));
 
         await this.plugin.saveSettings();
+        
+        // Refresh tag display
         this.renderTags();
     }
 

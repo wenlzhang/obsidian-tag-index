@@ -214,9 +214,13 @@ export default class TagIndexPlugin extends Plugin {
             DEFAULT_SETTINGS,
             await this.loadData(),
         );
+        
+        // Log the loaded settings for debugging
+        console.log("Loaded settings:", JSON.stringify(this.settings));
     }
 
     async saveSettings() {
+        console.log("Saving settings:", JSON.stringify(this.settings));
         await this.saveData(this.settings);
     }
 
