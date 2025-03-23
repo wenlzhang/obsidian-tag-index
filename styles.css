@@ -3,7 +3,7 @@
   margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .tag-index-empty-state {
@@ -21,13 +21,13 @@
   background-color: var(--background-secondary);
   position: relative;
   transition: background-color 0.2s ease;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .tag-index-tag-header {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 4px 12px;
   cursor: pointer;
   border-radius: 4px;
   justify-content: space-between;
@@ -81,7 +81,7 @@
 /* Notes container within a tag */
 .tag-index-tag-notes {
   padding-left: 32px;
-  margin: 4px 0 4px 0;
+  margin: 0px 0 4px 0;
   border-left: 1px solid var(--background-modifier-border);
 }
 
