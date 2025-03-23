@@ -8,6 +8,8 @@ import {
     App,
     TagCache,
     Notice,
+    HoverParent,
+    HoverPopover,
 } from "obsidian";
 import type TagIndexPlugin from "./main";
 import { ImportantTag } from "./settings";
@@ -325,50 +327,32 @@ export class TagIndexView extends ItemView {
                 cls: "tag-index-note-item",
             });
 
-            // File link (no icon)
-            const link = noteItem.createEl("a", {
-                text: file.basename,
-                cls: "tag-index-note-link",
+            // Create the link - mimicking exactly how Obsidian creates links in the editor
+            // This is critically important for hover preview to work with Command key
+            const link = noteItem.createSpan({
+                cls: "cm-hmd-internal-link tag-index-note-link",
             });
-
-            // Create and position the hover preview
-            const preview = noteItem.createDiv({
-                cls: "tag-index-note-preview",
+            
+            // Add the innermost link elements exactly as they appear in the editor
+            // These specific classes and structure are what the hover plugin looks for
+            const linkText = link.createSpan({
+                cls: "cm-underline", 
+                text: file.basename
             });
-            preview.style.display = "none";
-
+            
+            // These properties are critical for the hover preview to work
+            // The Hover Editor plugin specifically looks for these attributes
+            link.dataset.path = file.path;
+            link.setAttribute("data-path", file.path);
+            
+            // Store the TFile object directly on the link element for plugins to access
+            (link as any).file = file;
+            
+            // Handle click to open the file
             link.addEventListener("click", (e: MouseEvent) => {
                 e.preventDefault();
+                e.stopPropagation();
                 this.app.workspace.getLeaf().openFile(file);
-            });
-
-            // Show preview on hover
-            noteItem.addEventListener("mouseenter", async () => {
-                // Show loading indicator
-                preview.setText("Loading preview...");
-                preview.style.display = "block";
-
-                // Get file content
-                try {
-                    const content = await this.app.vault.read(file);
-                    const previewContent =
-                        content.slice(0, 500) +
-                        (content.length > 500 ? "..." : "");
-
-                    preview.empty();
-                    await MarkdownRenderer.renderMarkdown(
-                        previewContent,
-                        preview,
-                        file.path,
-                        this as any,
-                    );
-                } catch (error) {
-                    preview.setText("Error loading preview");
-                }
-            });
-
-            noteItem.addEventListener("mouseleave", () => {
-                preview.style.display = "none";
             });
         }
     }
