@@ -7,6 +7,7 @@ import {
     MarkdownRenderer,
     App,
     TagCache,
+    Notice,
 } from "obsidian";
 import type TagIndexPlugin from "./main";
 import { ImportantTag } from "./settings";
@@ -364,7 +365,7 @@ export class TagIndexView extends ItemView {
         }
     }
 
-    async addTag(tagName: string): Promise<void> {
+    async addTag(tagName: string): Promise<boolean> {
         // Store the tag name consistently without the # prefix
         let cleanTagName = tagName;
 
@@ -411,7 +412,8 @@ export class TagIndexView extends ItemView {
             )
         ) {
             console.log("Tag already exists, not adding:", cleanTagName);
-            return;
+            // Return false to indicate the tag was not added (duplicate)
+            return false;
         }
 
         // Create a new array with a shallow copy of the existing tags
@@ -453,10 +455,14 @@ export class TagIndexView extends ItemView {
         // Log current tags after modification
         console.log("Tags after adding:", JSON.stringify(this.plugin.settings.importantTags));
 
+        // Save the updated settings
         await this.plugin.saveSettings();
 
-        // Refresh tag display
+        // Refresh the view
         this.renderTags();
+        
+        // Return true to indicate success
+        return true;
     }
 
     // Deprecated - keeping for backwards compatibility

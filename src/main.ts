@@ -14,6 +14,7 @@ import {
     Point,
     EditorPosition,
     TagCache,
+    Notice,
 } from "obsidian";
 import { TagIndexSettings, DEFAULT_SETTINGS, ImportantTag } from "./settings";
 import { TagIndexView, TAG_INDEX_VIEW_TYPE } from "./tagIndexView";
@@ -308,11 +309,31 @@ export default class TagIndexPlugin extends Plugin {
         if (!this.tagIndexView) {
             await this.activateView();
             // If we still don't have the view, exit
-            if (!this.tagIndexView) return;
+            if (!this.tagIndexView) {
+                console.warn("Tag Index view is not active");
+                new Notice("Tag Index view is not active. Please open the Tag Index pane first.");
+                return;
+            }
         }
 
-        // Add the tag to the index
-        await this.tagIndexView.addTag(tagName);
+        // Add the tag to the index and get the result
+        const success = await this.tagIndexView.addTag(tagName);
+        
+        // Show appropriate notification based on the result
+        if (success) {
+            // Clean the tag name for display (remove # if present)
+            const displayName = tagName.startsWith("#") ? tagName : `#${tagName}`;
+            new Notice(`Tag "${displayName}" added to tag index.`);
+        } else {
+            // Extract the clean tag name for the notification
+            let cleanTagName = tagName;
+            if (cleanTagName.startsWith("#")) {
+                cleanTagName = cleanTagName.substring(1);
+            }
+            cleanTagName = cleanTagName.trim();
+            
+            new Notice(`Tag "#${cleanTagName}" already exists in the tag index.`);
+        }
     }
 
     // Helper to get all tags in the vault
