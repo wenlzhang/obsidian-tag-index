@@ -135,36 +135,66 @@ export default class TagIndexPlugin extends Plugin {
 
             // Fallback: try to extract from text content if data-tag is not available
             if (!tagName) {
-                const tagText = target.textContent?.trim();
-                if (!tagText) return;
-
-                // First, check for a space followed by a number (common tag pane format)
-                const spaceNumberMatch = tagText.match(/^(.*?)\s+\d+$/);
-                if (spaceNumberMatch) {
-                    // If there's a space followed by a number, use the part before
-                    tagName = spaceNumberMatch[1].trim();
-                } else {
-                    // For tags without spaces (like "DVTLCanvas10"),
-                    // check for known tag patterns in the vault
-                    const withoutNumberPattern = tagText.match(/^([a-zA-Z0-9_\-\/]+?)(\d+)$/);
-                    
-                    if (withoutNumberPattern) {
-                        // Check if this is a valid tag in the vault (without the numbers)
-                        const possibleTag = withoutNumberPattern[1];
-                        const allTags = this.getAllTags();
+                // DEBUG: Log what we can find in the DOM element
+                console.log("Tag pane element:", target);
+                console.log("Tag pane attributes:", target.attributes);
+                console.log("Tag pane innerText:", target.innerText);
+                console.log("Tag pane textContent:", target.textContent);
+                
+                // First see if the element has any parent with a data-tag attribute
+                const parentWithDataTag = target.closest("[data-tag]");
+                if (parentWithDataTag) {
+                    tagName = parentWithDataTag.getAttribute("data-tag");
+                    console.log("Found tag name from parent data-tag:", tagName);
+                }
+                
+                // If still no tag name, try text content
+                if (!tagName) {
+                    // Parse the innerText which contains the line break
+                    const innerText = target.innerText?.trim();
+                    if (innerText && innerText.includes('\n')) {
+                        // If there's a linebreak, the tag name is the part before it
+                        const parts = innerText.split('\n');
+                        tagName = parts[0].trim();
+                        console.log("Using tag name from innerText before linebreak:", tagName);
+                    } 
+                    // Fallback to textContent if innerText doesn't work
+                    else {
+                        const tagText = target.textContent?.trim();
+                        if (!tagText) return;
                         
-                        // If the tag without numbers exists in the vault, use that
-                        // Otherwise keep the full name including numbers
-                        if (allTags.includes(`#${possibleTag}`)) {
-                            tagName = possibleTag;
-                        } else {
-                            tagName = tagText;
+                        // Get all tags in the vault for reference
+                        const allTags = this.getAllTags().map(t => 
+                            t.startsWith('#') ? t.substring(1) : t);
+                        console.log("All tags in vault:", allTags);
+                        
+                        // DIRECT APPROACH FOR THE SPECIFIC CASE:
+                        // Check if removing last character results in a valid tag
+                        const withoutLastChar = tagText.slice(0, -1);
+                        
+                        // The key improvement: check if the remaining part (after removing the last digit)
+                        // matches a tag we already know about
+                        if (allTags.includes(withoutLastChar)) {
+                            tagName = withoutLastChar;
+                            console.log("Found tag by removing last character:", tagName);
                         }
-                    } else {
-                        // Default to the full text content if no patterns match
-                        tagName = tagText;
+                        // Next try removing a space-number pattern
+                        else if (tagText.match(/^(.*?)\s+\d+$/)) {
+                            const match = tagText.match(/^(.*?)\s+\d+$/);
+                            if (match) {
+                                tagName = match[1].trim();
+                                console.log("Found tag by removing space-number:", tagName);
+                            }
+                        }
+                        // Use the exact text if nothing else matches
+                        else {
+                            tagName = tagText;
+                            console.log("Using original text as tag name:", tagName);
+                        }
                     }
                 }
+            } else {
+                console.log("Found tag name from data-tag attribute:", tagName);
             }
 
             if (!tagName) return;

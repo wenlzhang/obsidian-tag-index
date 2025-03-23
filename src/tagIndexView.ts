@@ -377,18 +377,29 @@ export class TagIndexView extends ItemView {
         cleanTagName = cleanTagName.trim();
         
         // SPECIAL HANDLING FOR OBSIDIAN TAG PANE
-        // Only process tags that are likely from the Obsidian tag pane
+        // We assume most of the work is done in the context menu handler
+        // But add a fallback to handle any tags that might have slipped through
         
-        // Check for the space-number pattern (clear indicator of tag pane source)
-        const spaceNumberMatch = cleanTagName.match(/^(.*?)\s+\d+$/);
-        if (spaceNumberMatch) {
-            // This is definitely from the tag pane - extract just the tag name
-            cleanTagName = spaceNumberMatch[1].trim();
+        // Check if we have a linebreak (Obsidian's tag pane format)
+        if (cleanTagName.includes('\n')) {
+            const parts = cleanTagName.split('\n');
+            cleanTagName = parts[0].trim();
+            console.log("Tag panel detected linebreak pattern, cleaned to:", cleanTagName);
         }
-        
-        // For other patterns (like direct number appending without a space),
-        // we assume they were already processed properly in the context menu handler
-        // or they are legitimate tag names with numbers
+        // Check for the space-number pattern (also common in tag pane)
+        else if (cleanTagName.match(/^(.*?)\s+\d+$/)) {
+            const spaceNumberMatch = cleanTagName.match(/^(.*?)\s+\d+$/);
+            if (spaceNumberMatch) {
+                cleanTagName = spaceNumberMatch[1].trim();
+                console.log("Tag panel detected space-number pattern, cleaned to:", cleanTagName);
+            }
+        }
+        // Check for a numeric suffix that might be a count (least reliable)
+        else if (cleanTagName.match(/^(.+?)(\d+)$/)) {
+            // Only do this processing if we're confident it's from the tag pane
+            // and not just a legitimate tag with numbers
+            console.log("Potential tag with count detected, but leaving as is since we already processed in main.ts");
+        }
 
         console.log("Adding tag to index:", cleanTagName);
         console.log("Current addTagsToTop setting:", this.plugin.settings.addTagsToTop);
