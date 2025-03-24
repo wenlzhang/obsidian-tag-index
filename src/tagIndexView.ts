@@ -121,7 +121,9 @@ export class TagIndexView extends ItemView {
         const notesContainer = tagEl.createDiv({
             cls: "tag-index-tag-notes",
         });
-        notesContainer.style.display = isExpanded ? "block" : "none";
+        if (!isExpanded) {
+            notesContainer.addClass("tag-index-display-none");
+        }
 
         // If the tag is expanded, populate the notes
         if (isExpanded) {
@@ -227,7 +229,8 @@ export class TagIndexView extends ItemView {
         if (isExpanded) {
             // Collapse
             this.expandedTags.delete(tagName);
-            notesContainer.style.display = "none";
+            notesContainer.addClass("tag-index-display-none");
+            notesContainer.removeClass("tag-index-display-block");
             tagEl.removeClass("tag-expanded");
             setIcon(collapseIcon, "chevron-right");
         } else {
@@ -241,7 +244,8 @@ export class TagIndexView extends ItemView {
             notesContainer
                 .createDiv({ cls: "tag-index-loading" })
                 .setText("Loading notes...");
-            notesContainer.style.display = "block";
+            notesContainer.removeClass("tag-index-display-none");
+            notesContainer.addClass("tag-index-display-block");
 
             // Populate notes
             await this.populateNotesForTag(tagName, notesContainer);
@@ -325,9 +329,8 @@ export class TagIndexView extends ItemView {
 
             // Create and position the hover preview
             const preview = noteItem.createDiv({
-                cls: "tag-index-note-preview",
+                cls: "tag-index-note-preview tag-index-display-none",
             });
-            preview.style.display = "none";
 
             link.addEventListener("click", (e: MouseEvent) => {
                 e.preventDefault();
@@ -338,7 +341,8 @@ export class TagIndexView extends ItemView {
             noteItem.addEventListener("mouseenter", async () => {
                 // Show loading indicator
                 preview.setText("Loading preview...");
-                preview.style.display = "block";
+                preview.removeClass("tag-index-display-none");
+                preview.addClass("tag-index-display-block");
 
                 // Get file content
                 try {
@@ -360,7 +364,8 @@ export class TagIndexView extends ItemView {
             });
 
             noteItem.addEventListener("mouseleave", () => {
-                preview.style.display = "none";
+                preview.addClass("tag-index-display-none");
+                preview.removeClass("tag-index-display-block");
             });
         }
     }

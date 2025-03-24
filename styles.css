@@ -203,3 +203,12 @@
     width: 90%;
   }
 }
+
+/* Display state classes */
+.tag-index-display-none {
+  display: none;
+}
+
+.tag-index-display-block {
+  display: block;
+}
