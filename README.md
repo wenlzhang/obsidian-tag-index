@@ -38,50 +38,11 @@ The default Obsidian tag pane can quickly become overwhelming for several reason
 
 Tag Index solves these problems by giving you a dedicated space for the tags that matter most to you, with improved organization and navigation features.
 
-## How to Use
+## Documentation
 
-### Getting Started
+📚 **[View Full Documentation](https://ptkm.net/obsidian-tag-index)**
 
-1. Install the plugin from the Obsidian community plugins or manually
-2. Open the Tag Index view using:
-   - The hash (#) icon in the right sidebar
-   - The command palette with "Open Tag Index"
-
-### Adding Tags
-
-You can add tags to your index in several ways:
-
-1. **From the Editor**: Right-click on any tag in your note and select "Add to Tag Index"
-2. **From the Default Tag Pane**: Right-click on any tag in Obsidian's tag pane and select "Add to Tag Index"
-3. **Using Commands**: Open the command palette and use "Add tag to Tag Index"
-
-### Working with Tags
-
-- **View Notes with a Tag**: Click on any tag to see all notes that use it
-- **Expand/Collapse Tags**: Click the arrow icon next to a tag to expand or collapse its note list
-- **Preview Note Content**: **Hover over a note name to preview its content**
-- **Rearrange Tags**: Drag and drop tags to change their order
-- **Remove Tags**: Click the X button next to any tag to remove it from your index
-
-### Settings
-
-- **Add new tags to top**: When enabled, new tags will be added to the top of your list. When disabled, they will be added to the bottom.
-
-## Installation
-
-### From Obsidian Community Plugins
-
-1. Open Obsidian Settings > Community plugins
-2. Disable Safe mode if prompted
-3. Click Browse and search for "Tag Index"
-4. Click Install and then Enable
-
-### Manual Installation
-
-1. Download the latest release from the [releases page](https://github.com/wenlzhang/obsidian-tag-index/releases)
-2. Extract the zip into your Obsidian vault's `.obsidian/plugins` folder
-3. Reload Obsidian (Ctrl/Cmd + R)
-4. Enable the plugin in Obsidian settings
+Visit the documentation site to learn how to make the most of Tag Index in your Obsidian workflow.
 
 ## Support & Community
 
