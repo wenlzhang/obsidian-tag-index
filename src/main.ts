@@ -106,9 +106,13 @@ export default class TagIndexPlugin extends Plugin {
 
     onunload() {
         // Clean up resources when the plugin is disabled
-        console.log('Unloading Tag Index plugin');
+        console.log("Unloading Tag Index plugin");
         this.app.workspace.detachLeavesOfType(TAG_INDEX_VIEW_TYPE);
-        document.removeEventListener("contextmenu", this.contextMenuHandler, true);
+        document.removeEventListener(
+            "contextmenu",
+            this.contextMenuHandler,
+            true,
+        );
     }
 
     // Helper to find a tag at the cursor position
@@ -149,28 +153,29 @@ export default class TagIndexPlugin extends Plugin {
                 if (parentWithDataTag) {
                     tagName = parentWithDataTag.getAttribute("data-tag");
                 }
-                
+
                 // If still no tag name, try text content
                 if (!tagName) {
                     // Parse the innerText which contains the line break
                     const innerText = target.innerText?.trim();
-                    if (innerText && innerText.includes('\n')) {
+                    if (innerText && innerText.includes("\n")) {
                         // If there's a linebreak, the tag name is the part before it
-                        const parts = innerText.split('\n');
+                        const parts = innerText.split("\n");
                         tagName = parts[0].trim();
-                    } 
+                    }
                     // Fallback to textContent if innerText doesn't work
                     else {
                         const tagText = target.textContent?.trim();
                         if (!tagText) return;
-                        
+
                         // Get all tags in the vault for reference
-                        const allTags = this.getAllTags().map(t => 
-                            t.startsWith('#') ? t.substring(1) : t);
-                        
+                        const allTags = this.getAllTags().map((t) =>
+                            t.startsWith("#") ? t.substring(1) : t,
+                        );
+
                         // Check if removing last character results in a valid tag
                         const withoutLastChar = tagText.slice(0, -1);
-                        
+
                         // The key improvement: check if the remaining part (after removing the last digit)
                         // matches a tag we already know about
                         if (allTags.includes(withoutLastChar)) {
@@ -261,7 +266,7 @@ export default class TagIndexPlugin extends Plugin {
             DEFAULT_SETTINGS,
             await this.loadData(),
         );
-        
+
         // Log the loaded settings for debugging
         console.log("Loaded settings:", JSON.stringify(this.settings));
     }
@@ -299,18 +304,22 @@ export default class TagIndexPlugin extends Plugin {
             // If we still don't have the view, exit
             if (!this.tagIndexView) {
                 console.warn("Tag Index view is not active");
-                new Notice("Tag Index view is not active. Please open the Tag Index pane first.");
+                new Notice(
+                    "Tag Index view is not active. Please open the Tag Index pane first.",
+                );
                 return;
             }
         }
 
         // Add the tag to the index and get the result
         const success = await this.tagIndexView.addTag(tagName);
-        
+
         // Show appropriate notification based on the result
         if (success) {
             // Clean the tag name for display (ensure it has a hashtag)
-            const displayName = tagName.startsWith("#") ? tagName : `#${tagName}`;
+            const displayName = tagName.startsWith("#")
+                ? tagName
+                : `#${tagName}`;
             new Notice(`${displayName} added to Tag Index.`);
         } else {
             // Extract the clean tag name for the notification (ensure it has a hashtag)
@@ -319,7 +328,7 @@ export default class TagIndexPlugin extends Plugin {
                 cleanTagName = `#${cleanTagName}`;
             }
             cleanTagName = cleanTagName.trim();
-            
+
             new Notice(`${cleanTagName} already exists in Tag Index.`);
         }
     }

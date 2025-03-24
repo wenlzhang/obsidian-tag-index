@@ -15,16 +15,19 @@ export class TagIndexSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Add new tags to top")
-            .setDesc("When enabled, new tags will be added to the top of the tag list; otherwise, they will be added to the bottom.")
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.addTagsToTop)
-                .onChange(async (value) => {
-                    this.plugin.settings.addTagsToTop = value;
-                    await this.plugin.saveSettings();
-                    if (this.plugin.tagIndexView) {
-                        this.plugin.tagIndexView.renderTags();
-                    }
-                })
+            .setDesc(
+                "When enabled, new tags will be added to the top of the tag list; otherwise, they will be added to the bottom.",
+            )
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.addTagsToTop)
+                    .onChange(async (value) => {
+                        this.plugin.settings.addTagsToTop = value;
+                        await this.plugin.saveSettings();
+                        if (this.plugin.tagIndexView) {
+                            this.plugin.tagIndexView.renderTags();
+                        }
+                    }),
             );
     }
 }

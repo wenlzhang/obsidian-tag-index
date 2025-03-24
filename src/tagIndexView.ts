@@ -43,15 +43,19 @@ export class TagIndexView extends ItemView {
         container.empty();
 
         // Create a minimal header with an icon instead of the text heading
-        const headerContainer = container.createDiv({ cls: "tag-index-header" });
-        
+        const headerContainer = container.createDiv({
+            cls: "tag-index-header",
+        });
+
         // Add a small info icon that can show a tooltip on hover
-        const infoIcon = headerContainer.createSpan({ cls: "tag-index-info-icon" });
+        const infoIcon = headerContainer.createSpan({
+            cls: "tag-index-info-icon",
+        });
         setIcon(infoIcon, "info");
-        
+
         // Use a single title attribute for the tooltip
         infoIcon.setAttribute("title", "Important tags from Tag Index");
-        
+
         this.tagContainer = container.createDiv({ cls: "tag-index-container" });
 
         this.renderTags();
@@ -381,14 +385,14 @@ export class TagIndexView extends ItemView {
 
         // Trim any whitespace
         cleanTagName = cleanTagName.trim();
-        
+
         // SPECIAL HANDLING FOR OBSIDIAN TAG PANE
         // We assume most of the work is done in the context menu handler
         // But add a fallback to handle any tags that might have slipped through
-        
+
         // Check if we have a linebreak (Obsidian's tag pane format)
-        if (cleanTagName.includes('\n')) {
-            const parts = cleanTagName.split('\n');
+        if (cleanTagName.includes("\n")) {
+            const parts = cleanTagName.split("\n");
             cleanTagName = parts[0].trim();
         }
         // Check for the space-number pattern (also common in tag pane)
@@ -451,7 +455,7 @@ export class TagIndexView extends ItemView {
 
         // Refresh the view
         this.renderTags();
-        
+
         // Return true to indicate success
         return true;
     }
