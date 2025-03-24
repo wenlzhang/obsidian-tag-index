@@ -17,6 +17,15 @@ Tag Index solves the problem of tag overload by giving you a dedicated space for
 - **Content Preview**: Hover over note names to preview their content without opening them
 - **Customizable Behavior**: Choose whether new tags are added to the top or bottom of your list
 
+## Videos and Articles
+
+### Videos
+
+<a href="https://youtu.be/ODCG-f7kkpo" target="_blank">
+  <img src="https://img.youtube.com/vi/ODCG-f7kkpo/maxresdefault.jpg" width="800" alt="New Obsidian Plugin: Avoid tag pane chaos, create a curated list of important tags" />
+</a>
+
+
 ## Why Tag Index?
 
 The default Obsidian tag pane can quickly become overwhelming for several reasons:
