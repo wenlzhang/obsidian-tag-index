@@ -4,6 +4,8 @@
 
 An [Obsidian](https://obsidian.md) plugin that creates a curated list of important tags to serve as meaningful entry points to your knowledge base.
 
+![demo](/docs/attachment/demo.gif)
+
 ## Features
 
 Tag Index solves the problem of tag overload by giving you a dedicated space for your most important tags:
