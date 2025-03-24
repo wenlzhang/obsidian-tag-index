@@ -260,9 +260,6 @@ export class TagIndexView extends ItemView {
             ? tagName.substring(1)
             : tagName;
 
-        // Log for debugging
-        console.log("Searching for notes with tag:", tagNameWithoutHash);
-
         // Find files with the tag by searching the metadata cache
         const filesWithTag = this.app.vault
             .getMarkdownFiles()
@@ -305,11 +302,6 @@ export class TagIndexView extends ItemView {
 
                 return false;
             });
-
-        // Debug log the results
-        console.log(
-            `Found ${filesWithTag.length} files with tag ${tagNameWithoutHash}`,
-        );
 
         if (filesWithTag.length === 0) {
             container
@@ -393,25 +385,19 @@ export class TagIndexView extends ItemView {
         if (cleanTagName.includes('\n')) {
             const parts = cleanTagName.split('\n');
             cleanTagName = parts[0].trim();
-            console.log("Tag panel detected linebreak pattern, cleaned to:", cleanTagName);
         }
         // Check for the space-number pattern (also common in tag pane)
         else if (cleanTagName.match(/^(.*?)\s+\d+$/)) {
             const spaceNumberMatch = cleanTagName.match(/^(.*?)\s+\d+$/);
             if (spaceNumberMatch) {
                 cleanTagName = spaceNumberMatch[1].trim();
-                console.log("Tag panel detected space-number pattern, cleaned to:", cleanTagName);
             }
         }
         // Check for a numeric suffix that might be a count (least reliable)
         else if (cleanTagName.match(/^(.+?)(\d+)$/)) {
             // Only do this processing if we're confident it's from the tag pane
             // and not just a legitimate tag with numbers
-            console.log("Potential tag with count detected, but leaving as is since we already processed in main.ts");
         }
-
-        console.log("Adding tag to index:", cleanTagName);
-        console.log("Current addTagsToTop setting:", this.plugin.settings.addTagsToTop);
 
         // Check if tag already exists
         if (
@@ -419,7 +405,6 @@ export class TagIndexView extends ItemView {
                 (t: ImportantTag) => t.name === cleanTagName,
             )
         ) {
-            console.log("Tag already exists, not adding:", cleanTagName);
             // Return false to indicate the tag was not added (duplicate)
             return false;
         }
@@ -428,8 +413,6 @@ export class TagIndexView extends ItemView {
         const importantTags = [...this.plugin.settings.importantTags];
 
         if (this.plugin.settings.addTagsToTop) {
-            console.log("Adding tag to top:", cleanTagName);
-
             // When adding to top, we need to increment all positions first
             for (let i = 0; i < importantTags.length; i++) {
                 importantTags[i].position += 1;
@@ -444,8 +427,6 @@ export class TagIndexView extends ItemView {
             // Add to the beginning of the array
             importantTags.unshift(newTag);
         } else {
-            console.log("Adding tag to bottom:", cleanTagName);
-
             // When adding to bottom, position is the length of the current array
             const newPosition = importantTags.length;
             const newTag = {
@@ -459,9 +440,6 @@ export class TagIndexView extends ItemView {
 
         // Update the settings with the modified array
         this.plugin.settings.importantTags = importantTags;
-
-        // Log current tags after modification
-        console.log("Tags after adding:", JSON.stringify(this.plugin.settings.importantTags));
 
         // Save the updated settings
         await this.plugin.saveSettings();

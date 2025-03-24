@@ -23,6 +23,7 @@ import { TagIndexSettingTab } from "./settingsTab";
 export default class TagIndexPlugin extends Plugin {
     settings: TagIndexSettings;
     tagIndexView: TagIndexView | null = null;
+    private contextMenuHandler: (event: MouseEvent) => void;
 
     async onload() {
         await this.loadSettings();
@@ -103,6 +104,13 @@ export default class TagIndexPlugin extends Plugin {
         });
     }
 
+    onunload() {
+        // Clean up resources when the plugin is disabled
+        console.log('Unloading Tag Index plugin');
+        this.app.workspace.detachLeavesOfType(TAG_INDEX_VIEW_TYPE);
+        document.removeEventListener("contextmenu", this.contextMenuHandler, true);
+    }
+
     // Helper to find a tag at the cursor position
     findTagAtPosition(
         tags: TagCache[],
@@ -136,17 +144,10 @@ export default class TagIndexPlugin extends Plugin {
 
             // Fallback: try to extract from text content if data-tag is not available
             if (!tagName) {
-                // DEBUG: Log what we can find in the DOM element
-                console.log("Tag pane element:", target);
-                console.log("Tag pane attributes:", target.attributes);
-                console.log("Tag pane innerText:", target.innerText);
-                console.log("Tag pane textContent:", target.textContent);
-                
                 // First see if the element has any parent with a data-tag attribute
                 const parentWithDataTag = target.closest("[data-tag]");
                 if (parentWithDataTag) {
                     tagName = parentWithDataTag.getAttribute("data-tag");
-                    console.log("Found tag name from parent data-tag:", tagName);
                 }
                 
                 // If still no tag name, try text content
@@ -157,7 +158,6 @@ export default class TagIndexPlugin extends Plugin {
                         // If there's a linebreak, the tag name is the part before it
                         const parts = innerText.split('\n');
                         tagName = parts[0].trim();
-                        console.log("Using tag name from innerText before linebreak:", tagName);
                     } 
                     // Fallback to textContent if innerText doesn't work
                     else {
@@ -167,9 +167,7 @@ export default class TagIndexPlugin extends Plugin {
                         // Get all tags in the vault for reference
                         const allTags = this.getAllTags().map(t => 
                             t.startsWith('#') ? t.substring(1) : t);
-                        console.log("All tags in vault:", allTags);
                         
-                        // DIRECT APPROACH FOR THE SPECIFIC CASE:
                         // Check if removing last character results in a valid tag
                         const withoutLastChar = tagText.slice(0, -1);
                         
@@ -177,25 +175,20 @@ export default class TagIndexPlugin extends Plugin {
                         // matches a tag we already know about
                         if (allTags.includes(withoutLastChar)) {
                             tagName = withoutLastChar;
-                            console.log("Found tag by removing last character:", tagName);
                         }
                         // Next try removing a space-number pattern
                         else if (tagText.match(/^(.*?)\s+\d+$/)) {
                             const match = tagText.match(/^(.*?)\s+\d+$/);
                             if (match) {
                                 tagName = match[1].trim();
-                                console.log("Found tag by removing space-number:", tagName);
                             }
                         }
                         // Use the exact text if nothing else matches
                         else {
                             tagName = tagText;
-                            console.log("Using original text as tag name:", tagName);
                         }
                     }
                 }
-            } else {
-                console.log("Found tag name from data-tag attribute:", tagName);
             }
 
             if (!tagName) return;
@@ -239,7 +232,7 @@ export default class TagIndexPlugin extends Plugin {
         };
 
         // Create a context menu handler function
-        const contextMenuHandler = (event: MouseEvent) => {
+        this.contextMenuHandler = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
             if (target && target.closest && target.closest(".tag-pane-tag")) {
                 handleContextMenu(
@@ -250,13 +243,13 @@ export default class TagIndexPlugin extends Plugin {
         };
 
         // Add event listener with capture phase (true)
-        document.addEventListener("contextmenu", contextMenuHandler, true);
+        document.addEventListener("contextmenu", this.contextMenuHandler, true);
 
         // Register a function to remove the event listener when the plugin is disabled
         this.register(() => {
             document.removeEventListener(
                 "contextmenu",
-                contextMenuHandler,
+                this.contextMenuHandler,
                 true,
             );
         });
@@ -276,11 +269,6 @@ export default class TagIndexPlugin extends Plugin {
     async saveSettings() {
         console.log("Saving settings:", JSON.stringify(this.settings));
         await this.saveData(this.settings);
-    }
-
-    onunload() {
-        // Clean up when plugin is disabled
-        this.app.workspace.detachLeavesOfType(TAG_INDEX_VIEW_TYPE);
     }
 
     async activateView() {
