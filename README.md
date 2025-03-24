@@ -1,4 +1,4 @@
-# Obsidian Tag Index
+# Tag Index
 
 [![GitHub release (Latest by date)](https://img.shields.io/github/v/release/wenlzhang/obsidian-tag-index)](https://github.com/wenlzhang/obsidian-tag-index/releases) ![GitHub all releases](https://img.shields.io/github/downloads/wenlzhang/obsidian-tag-index/total?color=success)
 
