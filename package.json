@@ -1,7 +1,7 @@
 {
-    "name": "obsidian-tag-index",
-    "version": "1.0.0",
-    "description": "Create a separate index of important tags for quick access in Obsidian.",
+    "name": "tag-index",
+    "version": "0.0.1",
+    "description": "Create a curated list of important tags to serve as meaningful entry points to your knowledge base.",
     "main": "main.js",
     "scripts": {
         "dev": "node esbuild.config.mjs",
