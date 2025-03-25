@@ -115,9 +115,13 @@ export default class TagIndexPlugin extends Plugin {
 
     onunload() {
         // Clean up resources when the plugin is disabled
-        console.log('Unloading Tag Index plugin');
+        console.log("Unloading Tag Index plugin");
         // Remove the context menu event listener
-        document.removeEventListener("contextmenu", this.contextMenuHandler, true);
+        document.removeEventListener(
+            "contextmenu",
+            this.contextMenuHandler,
+            true,
+        );
     }
 
     // Helper to find a tag at the cursor position
@@ -143,7 +147,10 @@ export default class TagIndexPlugin extends Plugin {
 
     setupTagPaneContextMenu() {
         // This handler function gets the same menu that Tag Wrangler uses
-        const handleContextMenu = (event: ExtendedMouseEvent, target: HTMLElement) => {
+        const handleContextMenu = (
+            event: ExtendedMouseEvent,
+            target: HTMLElement,
+        ) => {
             // In the tag pane, the data-tag attribute contains the actual tag name
             const dataTag = target.getAttribute("data-tag");
 
