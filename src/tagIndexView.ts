@@ -360,7 +360,7 @@ export class TagIndexView extends ItemView {
                         previewContent,
                         preview,
                         file.path,
-                        this as any,
+                        this.plugin,
                     );
                 } catch (error) {
                     preview.setText("Error loading preview");

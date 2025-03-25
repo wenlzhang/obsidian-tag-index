@@ -20,10 +20,19 @@ import { TagIndexSettings, DEFAULT_SETTINGS, ImportantTag } from "./settings";
 import { TagIndexView, TAG_INDEX_VIEW_TYPE } from "./tagIndexView";
 import { TagIndexSettingTab } from "./settingsTab";
 
+// Define interfaces for extended types
+interface MenuConstructor {
+    forEvent?(event: MouseEvent): Menu;
+}
+
+interface ExtendedMouseEvent extends MouseEvent {
+    obsidian_contextmenu?: Menu;
+}
+
 export default class TagIndexPlugin extends Plugin {
     settings: TagIndexSettings;
     tagIndexView: TagIndexView | null = null;
-    private contextMenuHandler: (event: MouseEvent) => void;
+    private contextMenuHandler: (event: ExtendedMouseEvent) => void;
 
     async onload() {
         await this.loadSettings();
@@ -34,14 +43,14 @@ export default class TagIndexPlugin extends Plugin {
         });
 
         // Add ribbon icon for opening tag index
-        this.addRibbonIcon("hash", "Open Tag Index", () => {
+        this.addRibbonIcon("hash", "Open tag index", () => {
             this.activateView();
         });
 
         // Add command for opening tag index
         this.addCommand({
             id: "open-tag-index-view",
-            name: "Open Tag Index",
+            name: "Open tag index",
             callback: () => {
                 this.activateView();
             },
@@ -50,7 +59,7 @@ export default class TagIndexPlugin extends Plugin {
         // Add command for adding a tag to the index
         this.addCommand({
             id: "add-tag-to-index",
-            name: "Add tag to Tag Index",
+            name: "Add to tag index",
             callback: () => {
                 const modal = new TagSuggestModal(this);
                 modal.open();
@@ -84,7 +93,7 @@ export default class TagIndexPlugin extends Plugin {
 
                     if (tagUnderCursor) {
                         menu.addItem((item: MenuItem) => {
-                            item.setTitle("Add to Tag Index")
+                            item.setTitle("Add to tag index")
                                 .setIcon("plus")
                                 .onClick(() => {
                                     this.addTagToIndex(tagUnderCursor);
@@ -106,13 +115,9 @@ export default class TagIndexPlugin extends Plugin {
 
     onunload() {
         // Clean up resources when the plugin is disabled
-        console.log("Unloading Tag Index plugin");
-        this.app.workspace.detachLeavesOfType(TAG_INDEX_VIEW_TYPE);
-        document.removeEventListener(
-            "contextmenu",
-            this.contextMenuHandler,
-            true,
-        );
+        console.log('Unloading Tag Index plugin');
+        // Remove the context menu event listener
+        document.removeEventListener("contextmenu", this.contextMenuHandler, true);
     }
 
     // Helper to find a tag at the cursor position
@@ -138,7 +143,7 @@ export default class TagIndexPlugin extends Plugin {
 
     setupTagPaneContextMenu() {
         // This handler function gets the same menu that Tag Wrangler uses
-        const handleContextMenu = (event: MouseEvent, target: HTMLElement) => {
+        const handleContextMenu = (event: ExtendedMouseEvent, target: HTMLElement) => {
             // In the tag pane, the data-tag attribute contains the actual tag name
             const dataTag = target.getAttribute("data-tag");
 
@@ -202,18 +207,24 @@ export default class TagIndexPlugin extends Plugin {
             let menu: Menu;
 
             // Check if Obsidian's Menu.forEvent is available (newer API)
-            if ((Menu as any).forEvent) {
+            const MenuConstructor = Menu as unknown as MenuConstructor;
+            if (MenuConstructor.forEvent) {
                 // Get the menu from the event (which Tag Wrangler would also use)
-                menu =
-                    (event as any).obsidian_contextmenu ||
-                    (Menu as any).forEvent(event);
-                (event as any).obsidian_contextmenu = menu;
+                const existingMenu = event.obsidian_contextmenu;
+                if (existingMenu) {
+                    menu = existingMenu;
+                } else {
+                    menu = MenuConstructor.forEvent(event);
+                    event.obsidian_contextmenu = menu;
+                }
             } else {
                 // For older Obsidian versions, use the event property approach
-                menu = (event as any).obsidian_contextmenu;
-                if (!menu) {
+                const existingMenu = event.obsidian_contextmenu;
+                if (existingMenu) {
+                    menu = existingMenu;
+                } else {
                     menu = new Menu();
-                    (event as any).obsidian_contextmenu = menu;
+                    event.obsidian_contextmenu = menu;
 
                     // Show the menu after a brief delay (allows other plugins to add their items)
                     setTimeout(() => {
@@ -224,7 +235,7 @@ export default class TagIndexPlugin extends Plugin {
 
             // Add our item to the menu
             menu.addItem((item: MenuItem) => {
-                item.setTitle("Add to Tag Index")
+                item.setTitle("Add to tag index")
                     .setIcon("plus")
                     .onClick(() => {
                         // Add the # prefix if needed
@@ -237,7 +248,7 @@ export default class TagIndexPlugin extends Plugin {
         };
 
         // Create a context menu handler function
-        this.contextMenuHandler = (event: MouseEvent) => {
+        this.contextMenuHandler = (event: ExtendedMouseEvent) => {
             const target = event.target as HTMLElement;
             if (target && target.closest && target.closest(".tag-pane-tag")) {
                 handleContextMenu(
@@ -320,7 +331,7 @@ export default class TagIndexPlugin extends Plugin {
             const displayName = tagName.startsWith("#")
                 ? tagName
                 : `#${tagName}`;
-            new Notice(`${displayName} added to Tag Index.`);
+            new Notice(`${displayName} added to tag index.`);
         } else {
             // Extract the clean tag name for the notification (ensure it has a hashtag)
             let cleanTagName = tagName;
@@ -329,7 +340,7 @@ export default class TagIndexPlugin extends Plugin {
             }
             cleanTagName = cleanTagName.trim();
 
-            new Notice(`${cleanTagName} already exists in Tag Index.`);
+            new Notice(`${cleanTagName} already exists in tag index.`);
         }
     }
 
