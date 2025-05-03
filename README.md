@@ -25,6 +25,9 @@ Tag Index solves the problem of tag overload by giving you a dedicated space for
   <img src="https://img.youtube.com/vi/ODCG-f7kkpo/maxresdefault.jpg" width="800" alt="New Obsidian Plugin: Avoid tag pane chaos, create a curated list of important tags" />
 </a>
 
+### Articles
+
+- [The Strategy of Note Taking: Folders, Tags, Links, and Redundancy - PTKM](https://ptkm.net/blog-note-taking-strategy-folders-tags-links-redundancy)
 
 ## Why Tag Index?
 
