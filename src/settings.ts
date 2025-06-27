@@ -8,9 +8,11 @@ export interface ImportantTag {
 export interface TagIndexSettings {
     importantTags: ImportantTag[];
     addTagsToTop: boolean;
+    debugMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: TagIndexSettings = {
     importantTags: [],
     addTagsToTop: false,
+    debugMode: false,
 };

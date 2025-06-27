@@ -54,7 +54,7 @@ export class TagIndexView extends ItemView {
         setIcon(infoIcon, "info");
 
         // Use a single title attribute for the tooltip
-        infoIcon.setAttribute("title", "Important tags from Tag Index");
+        infoIcon.setAttribute("title", "Important tags from tag index");
 
         this.tagContainer = container.createDiv({ cls: "tag-index-container" });
 

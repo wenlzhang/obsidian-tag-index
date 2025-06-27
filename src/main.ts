@@ -285,12 +285,17 @@ export default class TagIndexPlugin extends Plugin {
             await this.loadData(),
         );
 
-        // Log the loaded settings for debugging
-        console.log("Loaded settings:", JSON.stringify(this.settings));
+        // Only log during development mode
+        if (this.settings.debugMode) {
+            console.log("Loaded settings:", JSON.stringify(this.settings));
+        }
     }
 
     async saveSettings() {
-        console.log("Saving settings:", JSON.stringify(this.settings));
+        // Only log during development mode
+        if (this.settings.debugMode) {
+            console.log("Saving settings:", JSON.stringify(this.settings));
+        }
         await this.saveData(this.settings);
     }
 
