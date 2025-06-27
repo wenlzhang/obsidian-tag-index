@@ -43,7 +43,7 @@ export class TagIndexSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     }),
             );
-            
+
         // Add a heading for Advanced settings
         new Setting(containerEl).setName("Advanced").setHeading();
 
@@ -51,7 +51,7 @@ export class TagIndexSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName("Debug mode")
             .setDesc(
-                "Enable console logging for debugging purposes. Only enable this if you need to troubleshoot issues."
+                "Enable console logging for debugging purposes. Only enable this if you need to troubleshoot issues.",
             )
             .addToggle((toggle) =>
                 toggle
@@ -59,7 +59,7 @@ export class TagIndexSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.debugMode = value;
                         await this.plugin.saveSettings();
-                    })
+                    }),
             );
     }
 }
