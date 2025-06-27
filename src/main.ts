@@ -107,9 +107,11 @@ export default class TagIndexPlugin extends Plugin {
         // Setup the tag pane context menu
         this.setupTagPaneContextMenu();
 
-        // Try to activate view after plugin is loaded
+        // Only auto-open the side panel if the setting is enabled
         this.app.workspace.onLayoutReady(() => {
-            this.activateView();
+            if (this.settings.autoOpenTagIndexPanel) {
+                this.activateView();
+            }
         });
     }
 

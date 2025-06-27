@@ -9,10 +9,12 @@ export interface TagIndexSettings {
     importantTags: ImportantTag[];
     addTagsToTop: boolean;
     debugMode: boolean;
+    autoOpenTagIndexPanel: boolean;
 }
 
 export const DEFAULT_SETTINGS: TagIndexSettings = {
     importantTags: [],
     addTagsToTop: false,
     debugMode: false,
+    autoOpenTagIndexPanel: false,
 };

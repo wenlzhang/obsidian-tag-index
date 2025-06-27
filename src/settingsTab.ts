@@ -29,6 +29,20 @@ export class TagIndexSettingTab extends PluginSettingTab {
                         }
                     }),
             );
+
+        new Setting(containerEl)
+            .setName("Auto-open tag index panel")
+            .setDesc(
+                "When enabled, the tag index side panel will automatically open when Obsidian starts or when the plugin is enabled.",
+            )
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.autoOpenTagIndexPanel)
+                    .onChange(async (value) => {
+                        this.plugin.settings.autoOpenTagIndexPanel = value;
+                        await this.plugin.saveSettings();
+                    }),
+            );
             
         // Add a heading for Advanced settings
         new Setting(containerEl).setName("Advanced").setHeading();
