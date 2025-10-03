@@ -93,11 +93,72 @@ export class TagIndexView extends ItemView {
     }
 
     private onFileMetadataChange(file: TFile): void {
-        // Only refresh if we have expanded tags (to avoid unnecessary refreshes)
-        if (this.expandedTags.size > 0) {
-            // Debounce the refresh to avoid too many updates
-            this.debouncedRefresh();
+        // Only refresh if line content is enabled and we have expanded tags
+        if (
+            !this.plugin.settings.showLineContent ||
+            this.expandedTags.size === 0
+        ) {
+            return;
         }
+
+        // Check if the file contains any of our important tags
+        const fileHasImportantTag = this.fileContainsImportantTags(file);
+
+        if (!fileHasImportantTag) {
+            // File doesn't contain any important tags, skip refresh
+            return;
+        }
+
+        // Debounce the refresh to avoid too many updates
+        this.debouncedRefresh();
+    }
+
+    // Helper method to check if a file contains any important tags
+    private fileContainsImportantTags(file: TFile): boolean {
+        const cache = this.app.metadataCache.getFileCache(file);
+        if (!cache) return false;
+
+        // Get all important tag names without # prefix as a Set for O(1) lookup
+        const importantTagNames = new Set(
+            this.plugin.settings.importantTags.map((tag) =>
+                tag.name.startsWith("#") ? tag.name.substring(1) : tag.name,
+            ),
+        );
+
+        // Check inline tags
+        if (cache.tags) {
+            for (const tagCache of cache.tags) {
+                const tagName = tagCache.tag.startsWith("#")
+                    ? tagCache.tag.substring(1)
+                    : tagCache.tag;
+
+                if (importantTagNames.has(tagName)) {
+                    return true;
+                }
+            }
+        }
+
+        // Check frontmatter tags
+        if (cache.frontmatter && cache.frontmatter.tags) {
+            const frontmatterTags = cache.frontmatter.tags;
+
+            if (Array.isArray(frontmatterTags)) {
+                for (const tag of frontmatterTags) {
+                    if (importantTagNames.has(tag)) {
+                        return true;
+                    }
+                }
+            } else if (typeof frontmatterTags === "string") {
+                const tags = frontmatterTags.split(",").map((t) => t.trim());
+                for (const tag of tags) {
+                    if (importantTagNames.has(tag)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private refreshTimeout: NodeJS.Timeout | null = null;
@@ -105,9 +166,10 @@ export class TagIndexView extends ItemView {
         if (this.refreshTimeout) {
             clearTimeout(this.refreshTimeout);
         }
+        // Use the configurable refresh delay from settings
         this.refreshTimeout = setTimeout(() => {
             this.renderTagsAndRestoreExpansion();
-        }, 500); // Wait 500ms after the last change
+        }, this.plugin.settings.refreshDelay);
     }
 
     renderTags(): void {

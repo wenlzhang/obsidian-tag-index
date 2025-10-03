@@ -16,6 +16,7 @@ export interface TagIndexSettings {
     showLineContent: boolean; // Show line/block content where tags appear
     lineContentClickBehavior: "jumpToLine" | "jumpAndSearch"; // What happens when clicking line content
     cursorPosition: "start" | "end"; // Where to place cursor when jumping to line
+    refreshDelay: number; // Delay in milliseconds before refreshing after file changes (0-3600000ms = 0-60min)
 }
 
 export const DEFAULT_SETTINGS: TagIndexSettings = {
@@ -28,4 +29,5 @@ export const DEFAULT_SETTINGS: TagIndexSettings = {
     showLineContent: true,
     lineContentClickBehavior: "jumpToLine",
     cursorPosition: "end",
+    refreshDelay: 500,
 };

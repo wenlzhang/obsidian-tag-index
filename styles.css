@@ -429,6 +429,20 @@
   line-height: 1.5;
 }
 
+/* Slider value display */
+.tag-index-slider-value {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  background-color: var(--background-secondary);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font-monospace);
+  color: var(--text-muted);
+  min-width: 60px;
+  text-align: center;
+}
+
 /* Display state classes */
 .tag-index-display-none {
   display: none;

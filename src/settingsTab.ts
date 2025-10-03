@@ -99,6 +99,41 @@ export class TagIndexSettingTab extends PluginSettingTab {
                             await this.plugin.saveSettings();
                         }),
                 );
+
+            const refreshDelaySetting = new Setting(containerEl)
+                .setName("Refresh delay")
+                .setDesc(
+                    "Time to wait after file changes before updating line content. Lower values = faster updates but more CPU usage. Recommended: 0.5s for small vaults, 2-5s for medium vaults, 30s-5min for large vaults, up to 60min for very large vaults.",
+                );
+
+            // Helper function to format delay display
+            const formatDelay = (ms: number): string => {
+                if (ms === 0) return "Instant";
+                if (ms < 1000) return `${ms} ms`;
+                if (ms < 60000) return `${(ms / 1000).toFixed(1)} s`;
+                return `${(ms / 60000).toFixed(1)} min`;
+            };
+
+            // Add value display
+            const valueDisplay = refreshDelaySetting.controlEl.createDiv({
+                cls: "tag-index-slider-value",
+            });
+            valueDisplay.setText(
+                formatDelay(this.plugin.settings.refreshDelay),
+            );
+
+            // 0-60 minutes (3,600,000 ms) with 500ms steps
+            refreshDelaySetting.addSlider((slider) =>
+                slider
+                    .setLimits(0, 3600000, 500)
+                    .setValue(this.plugin.settings.refreshDelay)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        this.plugin.settings.refreshDelay = value;
+                        await this.plugin.saveSettings();
+                        valueDisplay.setText(formatDelay(value));
+                    }),
+            );
         }
 
         // Add a heading for Advanced settings
