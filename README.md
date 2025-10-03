@@ -10,11 +10,29 @@ An [Obsidian](https://obsidian.md) plugin that creates a curated list of importa
 
 Tag Index solves the problem of tag overload by giving you a dedicated space for your most important tags:
 
+### Core Features
+
 - **Curated Tag Collection**: Create a personalized list of your most important tags separate from Obsidian's default tag pane
-- **Multiple Addition Methods**: Add tags from the editor, default tag pane, or more in the future
+- **Hierarchical Tag Support**: Full support for nested tags with automatic tree structure (e.g., `#project/dev/feature`)
+- **Multiple Addition Methods**: Add tags from the editor context menu, default tag pane, or command palette
 - **Visual Organization**: Rearrange tags via intuitive drag and drop
 - **Quick Note Access**: Click any tag to instantly see all notes using that tag
-- **Content Preview**: Hover over note names to preview their content without opening them
+
+### Line Content Display
+
+- **See Where Tags Appear**: View the actual line content where each tag exists in your notes
+- **Clickable Navigation**: Click any line content to jump directly to that location in your note
+
+### Interactive Navigation
+
+- **Jump to Line**: Click line content to open the file at the exact line
+- **Jump and Search**: Optionally open the search pane to see all tag occurrences across your vault
+- **Configurable Cursor**: Choose whether the cursor lands at the start or end of the line
+- **Hover Preview**: Hover over note names to preview their content without opening them
+
+### Performance & Customization
+
+- **Configurable Refresh Delay**: Set refresh delays from instant to 60 minutes based on vault size
 - **Customizable Behavior**: Choose whether new tags are added to the top or bottom of your list
 
 ## Videos and Articles
@@ -40,6 +58,37 @@ The default Obsidian tag pane can quickly become overwhelming for several reason
 5. **Inefficient Navigation**: While you can click tags in the default pane to search for them, this workflow isn't optimized for frequent access
 
 Tag Index solves these problems by giving you a dedicated space for the tags that matter most to you, with improved organization and navigation features.
+
+## Getting Started
+
+### Adding Tags
+
+You can add tags to your index in multiple ways:
+
+1. **From the Editor**: Right-click on any tag in your notes → "Add to tag index"
+2. **From Tag Pane**: Right-click on any tag in Obsidian's default tag pane → "Add to tag index"
+3. **Via Command**: Use the command palette (Ctrl/Cmd+P) → "Tag Index: Add to tag index"
+
+### Using Line Content Display
+
+The plugin can show you exactly where tags appear in your files:
+
+1. Enable **"Show line content"** in settings
+2. Click on any tag to expand it
+3. See all files containing that tag
+4. View the actual lines where the tag appears
+5. Click any line to jump directly to that location
+
+### Configuring Behavior
+
+Access settings via Settings → Tag Index:
+
+- **Add new tags to top**: Control where new tags appear in your list
+- **Auto-open tag index panel**: Automatically open the panel when Obsidian starts
+- **Show line content**: Toggle the line content display feature
+- **Line content click behavior**: Choose between "Jump to line" or "Jump to line and search"
+- **Cursor position**: Set cursor position when jumping (start or end of line)
+- **Refresh delay**: Configure auto-refresh timing (0-60 minutes) based on your vault size
 
 ## Documentation
 
