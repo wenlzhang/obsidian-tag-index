@@ -15,9 +15,11 @@ Tag Index solves the problem of tag overload by giving you a dedicated space for
 - **Curated Tag Collection**: Create a personalized list of your most important tags separate from Obsidian's default tag pane
 - **Hierarchical Tag Support**: Full support for nested tags with automatic tree structure (e.g., `#project/dev/feature`)
 - **Multiple Addition Methods**: Add tags from the editor context menu, default tag pane, or command palette
-- **Visual Organization**: Rearrange tags via intuitive drag and drop
+- **Visual Organization**: Rearrange tags via intuitive drag and drop in custom sort mode
 - **Quick Note Access**: Click any tag to instantly see all notes using that tag
-- **Flexible Note Sorting**: Sort notes under each tag by file name, modified time, or created time with one click
+- **Dual Sorting System**: Independent sorting for tags and notes
+  - **Tag Sorting**: Sort tags by custom order, frequency, name, or added time
+  - **Note Sorting**: Sort notes under each tag by file name, modified time, or created time
 
 ### Line Content Display
 
@@ -35,6 +37,7 @@ Tag Index solves the problem of tag overload by giving you a dedicated space for
 
 - **Configurable Refresh Delay**: Set refresh delays from instant to 60 minutes based on vault size
 - **Customizable Behavior**: Choose whether new tags are added to the top or bottom of your list
+- **Persistent Settings**: All sort preferences are saved and restored across sessions
 
 ## Videos and Articles
 
@@ -70,16 +73,34 @@ You can add tags to your index in multiple ways:
 2. **From Tag Pane**: Right-click on any tag in Obsidian's default tag pane → "Add to tag index"
 3. **Via Command**: Use the command palette (Ctrl/Cmd+P) → "Tag Index: Add to tag index"
 
+### Sorting Tags
+
+Organize your tag list with multiple sorting options:
+
+1. **Quick sort**: Click the **left sort button** (list icon) in the tag panel header
+2. Choose from 7 sorting methods:
+   - **Custom order**: Drag and drop tags to arrange them manually (default)
+   - **Frequency (high to low)**: Most frequently used tags appear first
+   - **Frequency (low to high)**: Least frequently used tags appear first
+   - **Tag name (A to Z)**: Alphabetical order ascending
+   - **Tag name (Z to A)**: Alphabetical order descending
+   - **Added time (new to old)**: Most recently added tags first
+   - **Added time (old to new)**: Oldest tags first
+3. **Set default**: Configure your preferred default in Settings → Tag Index → "Default tag sort method"
+4. **Drag and drop**: Only available in "Custom order" mode. Other modes will display a notice if you attempt to drag.
+
 ### Sorting Notes
 
 Change how notes are sorted under each tag:
 
-1. **Quick sort**: Click the sort button (arrow icon) at the top of the tag panel
+1. **Quick sort**: Click the **right sort button** (arrow icon) in the tag panel header
 2. Choose from 6 sorting options:
-   - File name (A to Z / Z to A)
-   - Modified time (new to old / old to new)
-   - Created time (new to old / old to new)
-3. **Set default**: Configure your preferred default in Settings → Tag Index
+   - **File name (A to Z / Z to A)**: Alphabetical order with natural number sorting
+   - **Modified time (new to old / old to new)**: Sort by last modification date
+   - **Created time (new to old / old to new)**: Sort by file creation date
+3. **Set default**: Configure your preferred default in Settings → Tag Index → "Default note sort method"
+
+> 💡 **Note**: Tag sorting and note sorting are independent. You can sort tags by frequency while sorting notes by name, for example.
 
 ### Using Line Content Display
 
@@ -95,13 +116,29 @@ The plugin can show you exactly where tags appear in your files:
 
 Access settings via Settings → Tag Index:
 
+**General Settings**
+
 - **Add new tags to top**: Control where new tags appear in your list
 - **Auto-open tag index panel**: Automatically open the panel when Obsidian starts
+
+**Line Content Display**
+
 - **Show line content**: Toggle the line content display feature
 - **Line content click behavior**: Choose between "Jump to line" or "Jump to line and search"
 - **Cursor position**: Set cursor position when jumping (start or end of line)
 - **Refresh delay**: Configure auto-refresh timing (0-60 minutes) based on your vault size
-- **Default note sort method**: Set your preferred sorting method for notes under tags
+
+**Sorting Options**
+
+- **Default tag sort method**: Choose how tags in the index are sorted (custom order, frequency, name, or added time)
+  - Custom order allows drag-and-drop rearrangement
+  - Other methods automatically organize tags
+- **Default note sort method**: Choose how notes under each tag are sorted (file name, modified time, or created time)
+  - Can be changed on-the-fly using the sort buttons in the panel header
+
+**Advanced**
+
+- **Debug mode**: Enable console logging for troubleshooting
 
 ## Documentation
 
