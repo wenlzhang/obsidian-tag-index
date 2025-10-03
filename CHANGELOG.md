@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.7.0] - 2025-10-03
+
+### Changes
+
+- perf: optimize tag frequency calculation using Obsidian's built-in cache API
+- feat: add tag sorting options with frequency, name, and added time methods
+- style: adjust tag index header spacing and alignment for better layout balance
+- refactor: replace sort menu icons with setChecked for cleaner menu state handling
+- feat: add flexible note sorting by name, modified time, or created time
+
 ## [0.6.1] - 2025-10-03
 
 ### Changes
