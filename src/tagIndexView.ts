@@ -559,41 +559,6 @@ export class TagIndexView extends ItemView {
         return true;
     }
 
-    // Sort tags by hierarchy automatically
-    async sortTagsByHierarchy(): Promise<void> {
-        const tags = [...this.plugin.settings.importantTags];
-
-        // Sort by tag path, ensuring parent tags come before children
-        tags.sort((a: ImportantTag, b: ImportantTag) => {
-            const aSegments = a.name.split("/");
-            const bSegments = b.name.split("/");
-
-            // Compare segment by segment
-            for (
-                let i = 0;
-                i < Math.min(aSegments.length, bSegments.length);
-                i++
-            ) {
-                const comparison = aSegments[i].localeCompare(bSegments[i]);
-                if (comparison !== 0) {
-                    return comparison;
-                }
-            }
-
-            // If all segments match, shorter path (parent) comes first
-            return aSegments.length - bSegments.length;
-        });
-
-        // Update positions
-        tags.forEach((tag: ImportantTag, index: number) => {
-            tag.position = index;
-        });
-
-        this.plugin.settings.importantTags = tags;
-        await this.plugin.saveSettings();
-        await this.renderTagsAndRestoreExpansion();
-    }
-
     // Deprecated - keeping for backwards compatibility
     async showNotesWithTag(tagName: string): Promise<void> {
         // Expand the tag if it's not already expanded
