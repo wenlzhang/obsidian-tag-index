@@ -232,10 +232,16 @@ export class TagIndexView extends ItemView {
         }
 
         // Calculate frequencies for frequency-based sorting
+        // Get all tag counts once from Obsidian's cache (very efficient)
         const frequencies = new Map<string, number>();
         if (method === "frequency-high" || method === "frequency-low") {
+            const allTagCounts = (this.app.metadataCache as any).getTags();
+
             tags.forEach((tag) => {
-                const count = this.getTagFrequency(tag.name);
+                const normalizedTagName = tag.name.startsWith("#")
+                    ? tag.name
+                    : `#${tag.name}`;
+                const count = allTagCounts[normalizedTagName] || 0;
                 frequencies.set(tag.name, count);
             });
         }
@@ -307,44 +313,18 @@ export class TagIndexView extends ItemView {
     }
 
     private getTagFrequency(tagName: string): number {
-        const tagNameWithoutHash = tagName.startsWith("#")
-            ? tagName.substring(1)
-            : tagName;
+        // Use Obsidian's built-in MetadataCache API for efficient tag counting
+        // This is much faster than manually scanning all files
+        const allTagCounts = (this.app.metadataCache as any).getTags();
 
-        // Count files that contain this tag
-        const count = this.app.vault
-            .getMarkdownFiles()
-            .filter((file: TFile) => {
-                const cache = this.app.metadataCache.getFileCache(file);
-                if (!cache) return false;
+        // Normalize tag name to ensure it has # prefix for lookup
+        const normalizedTagName = tagName.startsWith("#")
+            ? tagName
+            : `#${tagName}`;
 
-                // Check inline tags
-                if (cache.tags) {
-                    const hasInlineTag = cache.tags.some(
-                        (tagCache) => tagCache.tag === `#${tagNameWithoutHash}`,
-                    );
-                    if (hasInlineTag) return true;
-                }
-
-                // Check frontmatter tags
-                if (cache.frontmatter && cache.frontmatter.tags) {
-                    const frontmatterTags = cache.frontmatter.tags;
-                    if (Array.isArray(frontmatterTags)) {
-                        return frontmatterTags.some(
-                            (tag) => tag === tagNameWithoutHash,
-                        );
-                    } else if (typeof frontmatterTags === "string") {
-                        return frontmatterTags
-                            .split(",")
-                            .map((t) => t.trim())
-                            .includes(tagNameWithoutHash);
-                    }
-                }
-
-                return false;
-            }).length;
-
-        return count;
+        // getTags() returns an object like: { "#tag1": 5, "#tag2": 3, ... }
+        // where the number is how many files contain that tag
+        return allTagCounts[normalizedTagName] || 0;
     }
 
     private buildTree(tags?: ImportantTag[]): Map<string, TreeNode> {
