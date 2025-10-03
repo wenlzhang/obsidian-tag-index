@@ -23,5 +23,5 @@ export const DEFAULT_SETTINGS: TagIndexSettings = {
     autoOpenTagIndexPanel: false,
     expandedTags: [],
     expandedNodes: [],
-    showLineContent: true,
+    showLineContent: false,
 };
