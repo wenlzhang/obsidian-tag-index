@@ -405,51 +405,35 @@ export class TagIndexView extends ItemView {
                 cls: "tag-index-note-item",
             });
 
-            // File link (no icon)
+            // Create internal link using Obsidian's native format
+            // This enables hover preview with Page Preview core plugin or Hover Editor
             const link = noteItem.createEl("a", {
                 text: file.basename,
-                cls: "tag-index-note-link",
+                cls: "tag-index-note-link internal-link",
             });
 
-            // Create and position the hover preview
-            const preview = noteItem.createDiv({
-                cls: "tag-index-note-preview tag-index-display-none",
-            });
+            // Set the data-href attribute for Obsidian's hover preview system
+            link.setAttribute("data-href", file.path);
+            link.setAttribute("href", file.path);
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener");
 
+            // Handle click to open the file
             link.addEventListener("click", (e: MouseEvent) => {
                 e.preventDefault();
                 this.app.workspace.getLeaf().openFile(file);
             });
 
-            // Show preview on hover
-            noteItem.addEventListener("mouseenter", async () => {
-                // Show loading indicator
-                preview.setText("Loading preview...");
-                preview.removeClass("tag-index-display-none");
-                preview.addClass("tag-index-display-block");
-
-                // Get file content
-                try {
-                    const content = await this.app.vault.read(file);
-                    const previewContent =
-                        content.slice(0, 500) +
-                        (content.length > 500 ? "..." : "");
-
-                    preview.empty();
-                    await MarkdownRenderer.renderMarkdown(
-                        previewContent,
-                        preview,
-                        file.path,
-                        this.plugin,
-                    );
-                } catch (error) {
-                    preview.setText("Error loading preview");
-                }
-            });
-
-            noteItem.addEventListener("mouseleave", () => {
-                preview.addClass("tag-index-display-none");
-                preview.removeClass("tag-index-display-block");
+            // Enable Obsidian's native hover preview
+            // This works with both the core Page Preview plugin and third-party plugins like Hover Editor
+            link.addEventListener("mouseover", (event: MouseEvent) => {
+                this.app.workspace.trigger("hover-link", {
+                    event,
+                    source: TAG_INDEX_VIEW_TYPE,
+                    hoverParent: this,
+                    targetEl: link,
+                    linktext: file.path,
+                });
             });
         }
     }
