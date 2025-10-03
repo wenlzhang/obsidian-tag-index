@@ -290,8 +290,28 @@
 .tag-index-header {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   padding: 0 8px;
   margin-top: 8px;
+}
+
+.tag-index-sort-button {
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 3px;
+}
+
+.tag-index-sort-button:hover {
+  opacity: 1;
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
 }
 
 .tag-index-info-icon {

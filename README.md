@@ -17,6 +17,7 @@ Tag Index solves the problem of tag overload by giving you a dedicated space for
 - **Multiple Addition Methods**: Add tags from the editor context menu, default tag pane, or command palette
 - **Visual Organization**: Rearrange tags via intuitive drag and drop
 - **Quick Note Access**: Click any tag to instantly see all notes using that tag
+- **Flexible Note Sorting**: Sort notes under each tag by file name, modified time, or created time with one click
 
 ### Line Content Display
 
@@ -69,6 +70,17 @@ You can add tags to your index in multiple ways:
 2. **From Tag Pane**: Right-click on any tag in Obsidian's default tag pane → "Add to tag index"
 3. **Via Command**: Use the command palette (Ctrl/Cmd+P) → "Tag Index: Add to tag index"
 
+### Sorting Notes
+
+Change how notes are sorted under each tag:
+
+1. **Quick sort**: Click the sort button (arrow icon) at the top of the tag panel
+2. Choose from 6 sorting options:
+   - File name (A to Z / Z to A)
+   - Modified time (new to old / old to new)
+   - Created time (new to old / old to new)
+3. **Set default**: Configure your preferred default in Settings → Tag Index
+
 ### Using Line Content Display
 
 The plugin can show you exactly where tags appear in your files:
@@ -89,6 +101,7 @@ Access settings via Settings → Tag Index:
 - **Line content click behavior**: Choose between "Jump to line" or "Jump to line and search"
 - **Cursor position**: Set cursor position when jumping (start or end of line)
 - **Refresh delay**: Configure auto-refresh timing (0-60 minutes) based on your vault size
+- **Default note sort method**: Set your preferred sorting method for notes under tags
 
 ## Documentation
 

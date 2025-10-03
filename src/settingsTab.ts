@@ -136,6 +136,29 @@ export class TagIndexSettingTab extends PluginSettingTab {
             );
         }
 
+        new Setting(containerEl)
+            .setName("Default note sort method")
+            .setDesc(
+                "Choose how notes under each tag should be sorted. You can also change this by clicking the sort button in the tag index panel.",
+            )
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption("file-name-asc", "File name (A to Z)")
+                    .addOption("file-name-desc", "File name (Z to A)")
+                    .addOption("modified-new", "Modified time (new to old)")
+                    .addOption("modified-old", "Modified time (old to new)")
+                    .addOption("created-new", "Created time (new to old)")
+                    .addOption("created-old", "Created time (old to new)")
+                    .setValue(this.plugin.settings.noteSortMethod)
+                    .onChange(async (value) => {
+                        this.plugin.settings.noteSortMethod = value as any;
+                        await this.plugin.saveSettings();
+                        if (this.plugin.tagIndexView) {
+                            await this.plugin.tagIndexView.renderTagsAndRestoreExpansion();
+                        }
+                    }),
+            );
+
         // Add a heading for Advanced settings
         new Setting(containerEl).setName("Advanced").setHeading();
 

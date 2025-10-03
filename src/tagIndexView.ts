@@ -11,7 +11,7 @@ import {
     MarkdownView,
 } from "obsidian";
 import type TagIndexPlugin from "./main";
-import { ImportantTag } from "./settings";
+import { ImportantTag, NoteSortMethod } from "./settings";
 
 export const TAG_INDEX_VIEW_TYPE = "tag-index-view";
 
@@ -69,6 +69,18 @@ export class TagIndexView extends ItemView {
         // Create a minimal header with an icon instead of the text heading
         const headerContainer = container.createDiv({
             cls: "tag-index-header",
+        });
+
+        // Add sort button
+        const sortButton = headerContainer.createSpan({
+            cls: "tag-index-sort-button",
+        });
+        setIcon(sortButton, "arrow-up-down");
+        sortButton.setAttribute("title", this.getSortMethodLabel());
+
+        // Add click handler for sort button
+        sortButton.addEventListener("click", (e: MouseEvent) => {
+            this.showSortMenu(e, sortButton);
         });
 
         // Add a small info icon that can show a tooltip on hover
@@ -429,6 +441,162 @@ export class TagIndexView extends ItemView {
         await this.plugin.saveSettings();
     }
 
+    private getSortMethodLabel(): string {
+        const method = this.plugin.settings.noteSortMethod;
+        switch (method) {
+            case "file-name-asc":
+                return "Sort by: File name (A to Z)";
+            case "file-name-desc":
+                return "Sort by: File name (Z to A)";
+            case "modified-new":
+                return "Sort by: Modified time (new to old)";
+            case "modified-old":
+                return "Sort by: Modified time (old to new)";
+            case "created-new":
+                return "Sort by: Created time (new to old)";
+            case "created-old":
+                return "Sort by: Created time (old to new)";
+            default:
+                return "Sort by: File name (A to Z)";
+        }
+    }
+
+    private showSortMenu(event: MouseEvent, buttonEl: HTMLElement): void {
+        const menu = new Menu();
+
+        menu.addItem((item) => {
+            item.setTitle("File name (A to Z)")
+                .setIcon(
+                    this.plugin.settings.noteSortMethod === "file-name-asc"
+                        ? "check"
+                        : "",
+                )
+                .onClick(async () => {
+                    await this.setSortMethod("file-name-asc");
+                });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle("File name (Z to A)")
+                .setIcon(
+                    this.plugin.settings.noteSortMethod === "file-name-desc"
+                        ? "check"
+                        : "",
+                )
+                .onClick(async () => {
+                    await this.setSortMethod("file-name-desc");
+                });
+        });
+
+        menu.addSeparator();
+
+        menu.addItem((item) => {
+            item.setTitle("Modified time (new to old)")
+                .setIcon(
+                    this.plugin.settings.noteSortMethod === "modified-new"
+                        ? "check"
+                        : "",
+                )
+                .onClick(async () => {
+                    await this.setSortMethod("modified-new");
+                });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle("Modified time (old to new)")
+                .setIcon(
+                    this.plugin.settings.noteSortMethod === "modified-old"
+                        ? "check"
+                        : "",
+                )
+                .onClick(async () => {
+                    await this.setSortMethod("modified-old");
+                });
+        });
+
+        menu.addSeparator();
+
+        menu.addItem((item) => {
+            item.setTitle("Created time (new to old)")
+                .setIcon(
+                    this.plugin.settings.noteSortMethod === "created-new"
+                        ? "check"
+                        : "",
+                )
+                .onClick(async () => {
+                    await this.setSortMethod("created-new");
+                });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle("Created time (old to new)")
+                .setIcon(
+                    this.plugin.settings.noteSortMethod === "created-old"
+                        ? "check"
+                        : "",
+                )
+                .onClick(async () => {
+                    await this.setSortMethod("created-old");
+                });
+        });
+
+        menu.showAtMouseEvent(event);
+    }
+
+    private async setSortMethod(method: NoteSortMethod): Promise<void> {
+        this.plugin.settings.noteSortMethod = method;
+        await this.plugin.saveSettings();
+
+        // Update the sort button tooltip
+        const sortButton = this.containerEl.querySelector(
+            ".tag-index-sort-button",
+        );
+        if (sortButton) {
+            sortButton.setAttribute("title", this.getSortMethodLabel());
+        }
+
+        // Re-render to apply new sorting
+        await this.renderTagsAndRestoreExpansion();
+    }
+
+    private sortFiles(files: TFile[]): TFile[] {
+        const method = this.plugin.settings.noteSortMethod;
+        const sorted = [...files];
+
+        switch (method) {
+            case "file-name-asc":
+                sorted.sort((a, b) =>
+                    a.basename.localeCompare(b.basename, undefined, {
+                        numeric: true,
+                        sensitivity: "base",
+                    }),
+                );
+                break;
+            case "file-name-desc":
+                sorted.sort((a, b) =>
+                    b.basename.localeCompare(a.basename, undefined, {
+                        numeric: true,
+                        sensitivity: "base",
+                    }),
+                );
+                break;
+            case "modified-new":
+                sorted.sort((a, b) => b.stat.mtime - a.stat.mtime);
+                break;
+            case "modified-old":
+                sorted.sort((a, b) => a.stat.mtime - b.stat.mtime);
+                break;
+            case "created-new":
+                sorted.sort((a, b) => b.stat.ctime - a.stat.ctime);
+                break;
+            case "created-old":
+                sorted.sort((a, b) => a.stat.ctime - b.stat.ctime);
+                break;
+        }
+
+        return sorted;
+    }
+
     async removeTag(tagName: string): Promise<void> {
         this.plugin.settings.importantTags =
             this.plugin.settings.importantTags.filter(
@@ -665,9 +833,12 @@ export class TagIndexView extends ItemView {
             return;
         }
 
+        // Sort files according to user preference
+        const sortedFiles = this.sortFiles(filesWithTag);
+
         // List files
         const notesList = container.createDiv({ cls: "tag-index-notes-list" });
-        for (const file of filesWithTag) {
+        for (const file of sortedFiles) {
             const noteItem = notesList.createDiv({
                 cls: "tag-index-note-item",
             });
@@ -842,7 +1013,7 @@ export class TagIndexView extends ItemView {
         }
     }
 
-    private async renderTagsAndRestoreExpansion(): Promise<void> {
+    async renderTagsAndRestoreExpansion(): Promise<void> {
         const expandedTagsBefore = new Set(this.expandedTags);
         const expandedNodesBefore = new Set(this.expandedNodes);
 
