@@ -13,6 +13,7 @@ export interface TagIndexSettings {
     autoOpenTagIndexPanel: boolean;
     expandedTags: string[]; // Tags with notes expanded
     expandedNodes: string[]; // Nodes with children expanded
+    showLineContent: boolean; // Show line/block content where tags appear
 }
 
 export const DEFAULT_SETTINGS: TagIndexSettings = {
@@ -22,4 +23,5 @@ export const DEFAULT_SETTINGS: TagIndexSettings = {
     autoOpenTagIndexPanel: false,
     expandedTags: [],
     expandedNodes: [],
+    showLineContent: true,
 };

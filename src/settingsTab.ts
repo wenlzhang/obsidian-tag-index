@@ -44,6 +44,23 @@ export class TagIndexSettingTab extends PluginSettingTab {
                     }),
             );
 
+        new Setting(containerEl)
+            .setName("Show line content")
+            .setDesc(
+                "When enabled, displays the line or block content where each tag appears in the file. Multiple lines with the same tag will all be shown.",
+            )
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.showLineContent)
+                    .onChange(async (value) => {
+                        this.plugin.settings.showLineContent = value;
+                        await this.plugin.saveSettings();
+                        if (this.plugin.tagIndexView) {
+                            this.plugin.tagIndexView.renderTags();
+                        }
+                    }),
+            );
+
         // Add a heading for Advanced settings
         new Setting(containerEl).setName("Advanced").setHeading();
 

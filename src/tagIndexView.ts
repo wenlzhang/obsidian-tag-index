@@ -29,6 +29,7 @@ export class TagIndexView extends ItemView {
     draggedElement: HTMLElement | null = null;
     expandedTags: Set<string> = new Set(); // Track which tags are expanded
     expandedNodes: Set<string> = new Set(); // Track which nodes are expanded
+    private metadataChangeHandler: (file: TFile) => void;
 
     constructor(leaf: WorkspaceLeaf, plugin: TagIndexPlugin) {
         super(leaf);
@@ -37,6 +38,14 @@ export class TagIndexView extends ItemView {
         // Load expansion state from settings
         this.expandedTags = new Set(this.plugin.settings.expandedTags || []);
         this.expandedNodes = new Set(this.plugin.settings.expandedNodes || []);
+
+        // Set up auto-refresh on file changes
+        this.metadataChangeHandler = (file: TFile) => {
+            this.onFileMetadataChange(file);
+        };
+        this.registerEvent(
+            this.app.metadataCache.on("changed", this.metadataChangeHandler),
+        );
     }
 
     getViewType(): string {
@@ -75,7 +84,29 @@ export class TagIndexView extends ItemView {
     }
 
     async onClose(): Promise<void> {
-        // Nothing to clean up
+        // Clean up the refresh timeout
+        if (this.refreshTimeout) {
+            clearTimeout(this.refreshTimeout);
+            this.refreshTimeout = null;
+        }
+    }
+
+    private onFileMetadataChange(file: TFile): void {
+        // Only refresh if we have expanded tags (to avoid unnecessary refreshes)
+        if (this.expandedTags.size > 0) {
+            // Debounce the refresh to avoid too many updates
+            this.debouncedRefresh();
+        }
+    }
+
+    private refreshTimeout: NodeJS.Timeout | null = null;
+    private debouncedRefresh(): void {
+        if (this.refreshTimeout) {
+            clearTimeout(this.refreshTimeout);
+        }
+        this.refreshTimeout = setTimeout(() => {
+            this.renderTagsAndRestoreExpansion();
+        }, 500); // Wait 500ms after the last change
     }
 
     renderTags(): void {
@@ -340,6 +371,49 @@ export class TagIndexView extends ItemView {
         await this.renderTagsAndRestoreExpansion();
     }
 
+    // Helper method to extract line content containing a tag from a file
+    private async getTagLineContent(
+        file: TFile,
+        tagName: string,
+    ): Promise<{ line: number; content: string }[]> {
+        const tagNameWithoutHash = tagName.startsWith("#")
+            ? tagName.substring(1)
+            : tagName;
+
+        const cache = this.app.metadataCache.getFileCache(file);
+        if (!cache) return [];
+
+        const results: { line: number; content: string }[] = [];
+
+        // Get file content
+        const fileContent = await this.app.vault.read(file);
+        const lines = fileContent.split("\n");
+
+        // Check inline tags from cache
+        if (cache.tags) {
+            cache.tags.forEach((tagCache) => {
+                if (tagCache.tag === `#${tagNameWithoutHash}`) {
+                    const lineNumber = tagCache.position.start.line;
+                    if (lineNumber < lines.length) {
+                        results.push({
+                            line: lineNumber,
+                            content: lines[lineNumber].trim(),
+                        });
+                    }
+                }
+            });
+        }
+
+        // Remove duplicates (in case the same line appears multiple times)
+        const uniqueResults = results.filter(
+            (item, index, self) =>
+                index === self.findIndex((t) => t.line === item.line),
+        );
+
+        // Sort by line number
+        return uniqueResults.sort((a, b) => a.line - b.line);
+    }
+
     // Populate notes for a tag
     async populateNotesForTag(
         tagName: string,
@@ -409,9 +483,14 @@ export class TagIndexView extends ItemView {
                 cls: "tag-index-note-item",
             });
 
+            // Create header container for the file link
+            const noteHeader = noteItem.createDiv({
+                cls: "tag-index-note-header",
+            });
+
             // Create internal link using Obsidian's native format
             // This enables hover preview with Page Preview core plugin or Hover Editor
-            const link = noteItem.createEl("a", {
+            const link = noteHeader.createEl("a", {
                 text: file.basename,
                 cls: "tag-index-note-link internal-link",
             });
@@ -439,6 +518,43 @@ export class TagIndexView extends ItemView {
                     linktext: file.path,
                 });
             });
+
+            // Show line content if the setting is enabled
+            if (this.plugin.settings.showLineContent) {
+                const tagLineContent = await this.getTagLineContent(
+                    file,
+                    tagName,
+                );
+
+                if (tagLineContent.length > 0) {
+                    const linesContainer = noteItem.createDiv({
+                        cls: "tag-index-line-content-container",
+                    });
+
+                    for (const item of tagLineContent) {
+                        const lineEl = linesContainer.createDiv({
+                            cls: "tag-index-line-content",
+                        });
+
+                        // Add line number
+                        const lineNumber = lineEl.createSpan({
+                            cls: "tag-index-line-number",
+                            text: `${item.line + 1}: `,
+                        });
+
+                        // Add line content using MarkdownRenderer for proper formatting
+                        const contentEl = lineEl.createSpan({
+                            cls: "tag-index-line-text",
+                        });
+                        await MarkdownRenderer.renderMarkdown(
+                            item.content,
+                            contentEl,
+                            file.path,
+                            this,
+                        );
+                    }
+                }
+            }
         }
     }
 
