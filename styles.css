@@ -466,6 +466,22 @@
   border-color: var(--background-modifier-border-hover);
 }
 
+/* Clickable line content styling */
+.tag-index-line-clickable {
+  cursor: pointer;
+}
+
+.tag-index-line-clickable:hover {
+  background-color: var(--interactive-hover);
+  border-color: var(--interactive-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tag-index-line-clickable:active {
+  background-color: var(--interactive-accent);
+  transform: translateY(1px);
+}
+
 .tag-index-line-number {
   color: var(--text-faint);
   font-family: var(--font-monospace);

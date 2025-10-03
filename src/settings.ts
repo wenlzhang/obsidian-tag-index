@@ -14,6 +14,8 @@ export interface TagIndexSettings {
     expandedTags: string[]; // Tags with notes expanded
     expandedNodes: string[]; // Nodes with children expanded
     showLineContent: boolean; // Show line/block content where tags appear
+    lineContentClickBehavior: "jumpToLine" | "jumpAndSearch"; // What happens when clicking line content
+    cursorPosition: "start" | "end"; // Where to place cursor when jumping to line
 }
 
 export const DEFAULT_SETTINGS: TagIndexSettings = {
@@ -23,5 +25,7 @@ export const DEFAULT_SETTINGS: TagIndexSettings = {
     autoOpenTagIndexPanel: false,
     expandedTags: [],
     expandedNodes: [],
-    showLineContent: false,
+    showLineContent: true,
+    lineContentClickBehavior: "jumpToLine",
+    cursorPosition: "end",
 };

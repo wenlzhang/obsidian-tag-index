@@ -61,6 +61,38 @@ export class TagIndexSettingTab extends PluginSettingTab {
                     }),
             );
 
+        new Setting(containerEl)
+            .setName("Line content click behavior")
+            .setDesc(
+                "Choose what happens when you click on line content. 'Jump to line' opens the file at that line. 'Jump and search' also opens the search pane to show all occurrences.",
+            )
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption("jumpToLine", "Jump to line")
+                    .addOption("jumpAndSearch", "Jump to line and search")
+                    .setValue(this.plugin.settings.lineContentClickBehavior)
+                    .onChange(async (value: "jumpToLine" | "jumpAndSearch") => {
+                        this.plugin.settings.lineContentClickBehavior = value;
+                        await this.plugin.saveSettings();
+                    }),
+            );
+
+        new Setting(containerEl)
+            .setName("Cursor position")
+            .setDesc(
+                "Choose where the cursor is placed when jumping to a line. 'End of line' places the cursor at the end. 'Start of line' places it at the beginning.",
+            )
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption("end", "End of line")
+                    .addOption("start", "Start of line")
+                    .setValue(this.plugin.settings.cursorPosition)
+                    .onChange(async (value: "start" | "end") => {
+                        this.plugin.settings.cursorPosition = value;
+                        await this.plugin.saveSettings();
+                    }),
+            );
+
         // Add a heading for Advanced settings
         new Setting(containerEl).setName("Advanced").setHeading();
 

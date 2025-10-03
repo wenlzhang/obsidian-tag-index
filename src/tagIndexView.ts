@@ -8,6 +8,7 @@ import {
     App,
     TagCache,
     Notice,
+    MarkdownView,
 } from "obsidian";
 import type TagIndexPlugin from "./main";
 import { ImportantTag } from "./settings";
@@ -533,8 +534,22 @@ export class TagIndexView extends ItemView {
 
                     for (const item of tagLineContent) {
                         const lineEl = linesContainer.createDiv({
-                            cls: "tag-index-line-content",
+                            cls: "tag-index-line-content tag-index-line-clickable",
                         });
+
+                        // Add click handler for line content
+                        lineEl.addEventListener(
+                            "click",
+                            async (e: MouseEvent) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                await this.handleLineContentClick(
+                                    file,
+                                    item.line,
+                                    tagName,
+                                );
+                            },
+                        );
 
                         // Add line number
                         const lineNumber = lineEl.createSpan({
@@ -554,6 +569,87 @@ export class TagIndexView extends ItemView {
                         );
                     }
                 }
+            }
+        }
+    }
+
+    // Handle click on line content
+    private async handleLineContentClick(
+        file: TFile,
+        lineNumber: number,
+        tagName: string,
+    ): Promise<void> {
+        const behavior = this.plugin.settings.lineContentClickBehavior;
+        const cursorPos = this.plugin.settings.cursorPosition;
+
+        // Open the file and jump to the line
+        const leaf = this.app.workspace.getLeaf(false);
+        await leaf.openFile(file);
+
+        // Get the editor from the markdown view
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view || !view.editor) {
+            return;
+        }
+
+        const editor = view.editor;
+
+        // Calculate cursor position on the line
+        const line = editor.getLine(lineNumber);
+        const column = cursorPos === "end" ? line.length : 0;
+
+        // Set cursor position
+        editor.setCursor({
+            line: lineNumber,
+            ch: column,
+        });
+
+        // Scroll to the line
+        editor.scrollIntoView(
+            {
+                from: { line: lineNumber, ch: 0 },
+                to: { line: lineNumber, ch: line.length },
+            },
+            true,
+        );
+
+        // If the behavior is to also search, trigger the search
+        if (behavior === "jumpAndSearch") {
+            // Use Obsidian's search functionality
+            const searchLeaf = this.app.workspace.getLeavesOfType("search")[0];
+
+            if (searchLeaf) {
+                // Get the search view
+                const searchView = searchLeaf.view as any;
+
+                // Set the search query to the tag
+                if (searchView && searchView.setQuery) {
+                    searchView.setQuery(
+                        `tag:${tagName.startsWith("#") ? tagName.substring(1) : tagName}`,
+                    );
+                }
+
+                // Reveal the search pane
+                this.app.workspace.revealLeaf(searchLeaf);
+            } else {
+                // If search pane doesn't exist, execute the global search command
+                (this.app as any).commands.executeCommandById(
+                    "global-search:open",
+                );
+
+                // Wait a bit for the search pane to open
+                setTimeout(() => {
+                    const newSearchLeaf =
+                        this.app.workspace.getLeavesOfType("search")[0];
+                    if (newSearchLeaf) {
+                        const searchView = newSearchLeaf.view as any;
+                        if (searchView && searchView.setQuery) {
+                            searchView.setQuery(
+                                `tag:${tagName.startsWith("#") ? tagName.substring(1) : tagName}`,
+                            );
+                        }
+                    }
+                }, 100);
             }
         }
     }

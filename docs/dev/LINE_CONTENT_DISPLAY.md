@@ -222,14 +222,140 @@ Users can toggle the feature:
 4. **No inline tags**: Only frontmatter tags won't show line content
 5. **File not readable**: Gracefully handles with empty array return
 
+## Clickable line content
+
+### Overview
+
+Line content is now clickable, allowing users to quickly navigate to the exact location in the file. This feature includes configurable behaviors for different workflows.
+
+### Settings
+
+#### Line content click behavior
+
+Two modes are available:
+
+1. **Jump to line** (default)
+   - Opens the file at the specified line
+   - Places cursor at configured position
+   - Simple and focused navigation
+
+2. **Jump to line and search**
+   - Opens the file at the specified line
+   - Places cursor at configured position
+   - Opens the search pane with tag query
+   - Shows all occurrences across the vault
+   - Enables multi-file review
+
+#### Cursor position
+
+Two options for cursor placement:
+
+1. **End of line** (default)
+   - Cursor placed at the end of the line
+   - Useful for continuing to write
+   - Natural reading flow
+
+2. **Start of line**
+   - Cursor placed at the beginning
+   - Useful for editing from the start
+   - Quick deletion or modification
+
+### Implementation
+
+#### Click handler
+
+```typescript
+private async handleLineContentClick(
+    file: TFile,
+    lineNumber: number,
+    tagName: string,
+): Promise<void> {
+    const behavior = this.plugin.settings.lineContentClickBehavior;
+    const cursorPos = this.plugin.settings.cursorPosition;
+
+    // Open file and jump to line
+    const leaf = this.app.workspace.getLeaf(false);
+    await leaf.openFile(file);
+
+    // Get editor and set cursor
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view || !view.editor) return;
+
+    const editor = view.editor;
+    const line = editor.getLine(lineNumber);
+    const column = cursorPos === "end" ? line.length : 0;
+
+    editor.setCursor({ line: lineNumber, ch: column });
+    editor.scrollIntoView(...);
+
+    // Open search if configured
+    if (behavior === "jumpAndSearch") {
+        // Trigger search functionality
+    }
+}
+```
+
+#### Search integration
+
+When "Jump to line and search" is enabled:
+
+1. Checks if search pane exists
+2. If exists: Sets query and reveals pane
+3. If not: Opens search pane, waits, then sets query
+4. Query format: `tag:tagname` (without #)
+
+#### Visual feedback
+
+CSS classes provide clear interaction cues:
+
+```css
+.tag-index-line-clickable {
+  cursor: pointer;
+}
+
+.tag-index-line-clickable:hover {
+  background-color: var(--interactive-hover);
+  border-color: var(--interactive-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tag-index-line-clickable:active {
+  background-color: var(--interactive-accent);
+  transform: translateY(1px);
+}
+```
+
+### User workflows
+
+#### Workflow 1: Quick navigation
+1. User sees interesting line content
+2. Clicks on it
+3. File opens at exact line
+4. Cursor ready to edit
+
+#### Workflow 2: Research mode
+1. User wants to review all tag occurrences
+2. Clicks on line content
+3. File opens at that line
+4. Search pane opens showing all matches
+5. User can browse other occurrences
+
+### Benefits
+
+- **Faster navigation**: One-click access to exact location
+- **Context awareness**: See content before jumping
+- **Flexible workflows**: Choose behavior per use case
+- **Visual feedback**: Clear hover and active states
+- **Search integration**: Seamless cross-file exploration
+
 ## Future enhancements
 
 Potential improvements:
-- Click on line content to jump to that line in the file
 - Syntax highlighting for code blocks
 - Configurable line content preview length
 - Option to show surrounding context (lines before/after)
 - Display block content for block-level tags
+- Middle-click to open in new pane
 
 ## Related files
 
