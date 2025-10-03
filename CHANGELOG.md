@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.5.0] - 2025-10-03
+
+### Changes
+
+- fix: default showLineContent setting to false
+- feat: add line content preview to tag index panel with auto-refresh
+- fix: handle undefined nodes in tag index tree traversal
+
 ## [0.4.0] - 2025-10-03
 
 ### Changes
