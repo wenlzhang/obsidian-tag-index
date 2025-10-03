@@ -33,6 +33,10 @@ export class TagIndexView extends ItemView {
     constructor(leaf: WorkspaceLeaf, plugin: TagIndexPlugin) {
         super(leaf);
         this.plugin = plugin;
+
+        // Load expansion state from settings
+        this.expandedTags = new Set(this.plugin.settings.expandedTags || []);
+        this.expandedNodes = new Set(this.plugin.settings.expandedNodes || []);
     }
 
     getViewType(): string {
@@ -277,7 +281,16 @@ export class TagIndexView extends ItemView {
             }
         }
 
+        // Save expansion state to settings
+        await this.saveExpansionState();
+
         await this.renderTagsAndRestoreExpansion();
+    }
+
+    private async saveExpansionState(): Promise<void> {
+        this.plugin.settings.expandedTags = Array.from(this.expandedTags);
+        this.plugin.settings.expandedNodes = Array.from(this.expandedNodes);
+        await this.plugin.saveSettings();
     }
 
     async removeTag(tagName: string): Promise<void> {

@@ -44,23 +44,6 @@ export class TagIndexSettingTab extends PluginSettingTab {
                     }),
             );
 
-        new Setting(containerEl)
-            .setName("Auto-insert parent tags")
-            .setDesc(
-                "When enabled, adding a nested tag (e.g., project/work/urgent) will automatically add its parent tags (project, project/work) if they don't exist. This ensures proper hierarchy display.",
-            )
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.autoInsertParentTags)
-                    .onChange(async (value) => {
-                        this.plugin.settings.autoInsertParentTags = value;
-                        await this.plugin.saveSettings();
-                        if (this.plugin.tagIndexView) {
-                            this.plugin.tagIndexView.renderTags();
-                        }
-                    }),
-            );
-
         // Add a heading for Advanced settings
         new Setting(containerEl).setName("Advanced").setHeading();
 

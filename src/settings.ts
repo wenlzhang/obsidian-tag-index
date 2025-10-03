@@ -11,7 +11,8 @@ export interface TagIndexSettings {
     addTagsToTop: boolean;
     debugMode: boolean;
     autoOpenTagIndexPanel: boolean;
-    autoInsertParentTags: boolean; // Automatically add parent tags when adding nested tags
+    expandedTags: string[]; // Tags with notes expanded
+    expandedNodes: string[]; // Nodes with children expanded
 }
 
 export const DEFAULT_SETTINGS: TagIndexSettings = {
@@ -19,5 +20,6 @@ export const DEFAULT_SETTINGS: TagIndexSettings = {
     addTagsToTop: false,
     debugMode: false,
     autoOpenTagIndexPanel: false,
-    autoInsertParentTags: true,
+    expandedTags: [],
+    expandedNodes: [],
 };
