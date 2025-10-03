@@ -14,12 +14,21 @@ import { ImportantTag } from "./settings";
 
 export const TAG_INDEX_VIEW_TYPE = "tag-index-view";
 
+interface TreeNode {
+    name: string; // Segment name only (e.g., "work", not "project/work")
+    fullPath: string; // Full path (e.g., "project/work")
+    isActualTag: boolean; // Is this an actual tag in the index, or just a node?
+    children: Map<string, TreeNode>;
+    tag?: ImportantTag; // The actual tag data if isActualTag is true
+}
+
 export class TagIndexView extends ItemView {
     plugin: TagIndexPlugin;
     tagContainer: HTMLElement;
     draggedTag: string | null = null;
     draggedElement: HTMLElement | null = null;
     expandedTags: Set<string> = new Set(); // Track which tags are expanded
+    expandedNodes: Set<string> = new Set(); // Track which nodes are expanded
 
     constructor(leaf: WorkspaceLeaf, plugin: TagIndexPlugin) {
         super(leaf);
@@ -76,176 +85,198 @@ export class TagIndexView extends ItemView {
             return;
         }
 
-        // Sort tags by position
-        const sortedTags = [...this.plugin.settings.importantTags].sort(
-            (a: ImportantTag, b: ImportantTag) => a.position - b.position,
-        );
+        // Build tree structure from all tags
+        const tree = this.buildTree();
 
-        // Build a hierarchy map based on tag paths
-        const hierarchyMap = new Map<string, ImportantTag[]>();
-        for (const tag of sortedTags) {
-            this.addTagToHierarchy(hierarchyMap, tag.name, tag);
-        }
-
-        const rendered = new Set<string>();
-
-        for (const tag of sortedTags) {
-            if (!rendered.has(tag.name)) {
-                this.renderTagRecursive(hierarchyMap, tag.name, rendered);
-            }
-        }
+        // Render the tree
+        this.renderTree(tree, this.tagContainer, 0);
     }
 
-    private renderTagRecursive(
-        hierarchyMap: Map<string, ImportantTag[]>,
-        tagName: string,
-        rendered: Set<string>,
-    ): void {
-        const tag = this.plugin.settings.importantTags.find(
-            (t) => t.name === tagName,
-        );
+    private buildTree(): Map<string, TreeNode> {
+        const root = new Map<string, TreeNode>();
 
-        if (!tag) {
-            return;
-        }
+        for (const tag of this.plugin.settings.importantTags) {
+            const segments = tag.name.split("/");
+            let currentLevel = root;
+            let currentPath = "";
 
-        rendered.add(tagName);
-        const shouldExpand = this.expandedTags.has(tagName);
-        this.createTagElement(tag, shouldExpand);
+            for (let i = 0; i < segments.length; i++) {
+                const segment = segments[i];
+                currentPath = currentPath
+                    ? `${currentPath}/${segment}`
+                    : segment;
+                const isLastSegment = i === segments.length - 1;
 
-        const children = hierarchyMap.get(tagName);
-        if (children && shouldExpand) {
-            for (const child of children) {
-                if (!rendered.has(child.name)) {
-                    this.renderTagRecursive(hierarchyMap, child.name, rendered);
+                if (!currentLevel.has(segment)) {
+                    currentLevel.set(segment, {
+                        name: segment,
+                        fullPath: currentPath,
+                        isActualTag: isLastSegment,
+                        children: new Map<string, TreeNode>(),
+                        tag: isLastSegment ? tag : undefined,
+                    });
+                } else if (isLastSegment) {
+                    // Update existing node to mark it as an actual tag
+                    const existingNode = currentLevel.get(segment)!;
+                    existingNode.isActualTag = true;
+                    existingNode.tag = tag;
                 }
+
+                const node = currentLevel.get(segment)!;
+                currentLevel = node.children;
             }
         }
+
+        return root;
     }
 
-    private addTagToHierarchy(
-        hierarchyMap: Map<string, ImportantTag[]>,
-        tagName: string,
-        tag: ImportantTag,
+    private renderTree(
+        nodes: Map<string, TreeNode>,
+        container: HTMLElement,
+        level: number,
     ): void {
-        const segments = tagName.split("/");
-        for (let i = segments.length - 1; i > 0; i--) {
-            const parent = segments.slice(0, i).join("/");
-            const children = hierarchyMap.get(parent) ?? [];
-            if (!children.some((child) => child.name === tagName)) {
-                children.push(tag);
-                hierarchyMap.set(parent, children);
-            }
+        const sortedNodes = Array.from(nodes.values()).sort((a, b) =>
+            a.name.localeCompare(b.name),
+        );
+
+        for (const node of sortedNodes) {
+            this.renderNode(node, container, level);
         }
     }
 
-    private createTagElement(tag: ImportantTag, isExpanded: boolean): void {
-        const tagEl = this.tagContainer.createDiv({ cls: "tag-index-tag" });
-        const tagSegments = tag.name.split("/");
-        const level = Math.max(tagSegments.length - 1, 0);
-        const parentPath =
-            tagSegments.length > 1 ? tagSegments.slice(0, -1).join("/") : "";
-        const displayLabel = tagSegments[tagSegments.length - 1] ?? tag.name;
-        const isNested = tag.isNested ?? level > 0;
+    private renderNode(
+        node: TreeNode,
+        container: HTMLElement,
+        level: number,
+    ): void {
+        const hasChildren = node.children.size > 0;
+        const nodeEl = container.createDiv({
+            cls: "tag-index-tree-item",
+        });
+        nodeEl.setAttribute("data-level", level.toString());
+        nodeEl.setAttribute("data-path", node.fullPath);
 
-        tagEl.setAttribute("data-tag", tag.name);
-        tagEl.setAttribute("data-level", level.toString());
-        if (isNested && level > 0) {
-            tagEl.addClass("tag-index-tag-nested");
+        // Create the item header
+        const headerEl = nodeEl.createDiv({
+            cls: "tag-index-tree-item-self",
+        });
+
+        // Add chevron if has children or is a tag with notes
+        const isExpanded = node.isActualTag
+            ? this.expandedTags.has(node.fullPath)
+            : this.expandedNodes.has(node.fullPath);
+
+        if (hasChildren || node.isActualTag) {
+            const chevron = headerEl.createDiv({
+                cls: "tag-index-tree-item-icon",
+            });
+            setIcon(chevron, isExpanded ? "chevron-down" : "chevron-right");
+
+            chevron.addEventListener("click", (e: MouseEvent) => {
+                e.stopPropagation();
+                this.toggleNode(node);
+            });
+        } else {
+            // Empty space for alignment
+            headerEl.createDiv({ cls: "tag-index-tree-item-icon-placeholder" });
         }
 
-        if (isExpanded) {
-            tagEl.addClass("tag-expanded");
+        // Add the name (segment only)
+        const nameEl = headerEl.createDiv({
+            cls: node.isActualTag
+                ? "tag-index-tree-item-name tag-index-tree-item-tag"
+                : "tag-index-tree-item-name tag-index-tree-item-node",
+        });
+        nameEl.setText(node.name);
+
+        // If it's an actual tag, add remove button
+        if (node.isActualTag && node.tag) {
+            const removeBtn = headerEl.createDiv({
+                cls: "tag-index-remove-btn",
+            });
+            setIcon(removeBtn, "x");
+            removeBtn.addEventListener("click", (e: MouseEvent) => {
+                e.stopPropagation();
+                this.removeTag(node.fullPath);
+            });
+
+            // Make draggable if it's an actual tag
+            headerEl.setAttribute("draggable", "true");
+            headerEl.addEventListener("dragstart", (e: DragEvent) => {
+                this.draggedTag = node.fullPath;
+                this.draggedElement = nodeEl;
+                nodeEl.addClass("tag-being-dragged");
+                if (e.dataTransfer) {
+                    e.dataTransfer.setData("text/plain", node.fullPath);
+                    e.dataTransfer.effectAllowed = "move";
+                }
+            });
+
+            headerEl.addEventListener("dragend", () => {
+                nodeEl.removeClass("tag-being-dragged");
+                this.draggedTag = null;
+                this.draggedElement = null;
+            });
+
+            nodeEl.addEventListener("dragover", (e: DragEvent) => {
+                e.preventDefault();
+                if (this.draggedTag && this.draggedTag !== node.fullPath) {
+                    nodeEl.addClass("tag-drag-over");
+                }
+            });
+
+            nodeEl.addEventListener("dragleave", () => {
+                nodeEl.removeClass("tag-drag-over");
+            });
+
+            nodeEl.addEventListener("drop", (e: DragEvent) => {
+                e.preventDefault();
+                nodeEl.removeClass("tag-drag-over");
+                if (this.draggedTag && this.draggedTag !== node.fullPath) {
+                    this.moveTag(this.draggedTag, node.fullPath);
+                }
+            });
         }
 
-        // Tag header container (single row with all controls)
-        const tagHeader = tagEl.createDiv({ cls: "tag-index-tag-header" });
-        tagHeader.setAttribute("title", `#${tag.name}`);
-
-        // Create expand/collapse icon
-        const collapseIcon = tagHeader.createDiv({
-            cls: "tag-index-collapse-icon",
-        });
-        setIcon(collapseIcon, isExpanded ? "chevron-down" : "chevron-right");
-
-        // Tag name in the center (removed the redundant tag icon)
-        const tagNameContainer = tagHeader.createDiv({
-            cls: "tag-index-tag-name",
-        });
-        if (parentPath) {
-            tagNameContainer
-                .createSpan({ cls: "tag-index-tag-prefix" })
-                .setText(`${parentPath}/`);
-        }
-        tagNameContainer
-            .createSpan({ cls: "tag-index-tag-label" })
-            .setText(displayLabel);
-
-        // Remove button on the right
-        const removeButton = tagHeader.createDiv({
-            cls: "tag-index-remove-btn",
-        });
-        setIcon(removeButton, "x");
-        removeButton.addEventListener("click", (e: MouseEvent) => {
-            e.stopPropagation();
-            this.removeTag(tag.name);
+        // Add children container
+        const childrenContainer = nodeEl.createDiv({
+            cls: "tag-index-tree-item-children",
         });
 
-        // Create container for notes (initially hidden if not expanded)
-        const notesContainer = tagEl.createDiv({
-            cls: "tag-index-tag-notes",
-        });
         if (!isExpanded) {
-            notesContainer.addClass("tag-index-display-none");
+            childrenContainer.addClass("tag-index-display-none");
         }
 
-        // If the tag is expanded, populate the notes
-        if (isExpanded) {
-            this.populateNotesForTag(tag.name, notesContainer);
+        // If this is an actual tag and expanded, show notes
+        if (node.isActualTag && isExpanded) {
+            const notesContainer = childrenContainer.createDiv({
+                cls: "tag-index-tag-notes",
+            });
+            this.populateNotesForTag(node.fullPath, notesContainer);
         }
 
-        // Click to expand/collapse tag
-        tagHeader.addEventListener("click", () => {
-            this.toggleTag(tag.name);
-        });
+        // Render children if expanded
+        if (hasChildren && isExpanded) {
+            this.renderTree(node.children, childrenContainer, level + 1);
+        }
+    }
 
-        // Make tag draggable
-        tagHeader.setAttribute("draggable", "true");
-
-        tagHeader.addEventListener("dragstart", (e: DragEvent) => {
-            this.draggedTag = tag.name;
-            this.draggedElement = tagEl;
-            tagEl.addClass("tag-being-dragged");
-            if (e.dataTransfer) {
-                e.dataTransfer.setData("text/plain", tag.name);
-                e.dataTransfer.effectAllowed = "move";
+    private async toggleNode(node: TreeNode): Promise<void> {
+        if (node.isActualTag) {
+            if (this.expandedTags.has(node.fullPath)) {
+                this.expandedTags.delete(node.fullPath);
+            } else {
+                this.expandedTags.add(node.fullPath);
             }
-        });
-
-        tagHeader.addEventListener("dragend", () => {
-            tagEl.removeClass("tag-being-dragged");
-            this.draggedTag = null;
-            this.draggedElement = null;
-        });
-
-        tagEl.addEventListener("dragover", (e: DragEvent) => {
-            e.preventDefault();
-            if (this.draggedTag && this.draggedTag !== tag.name) {
-                tagEl.addClass("tag-drag-over");
+        } else {
+            if (this.expandedNodes.has(node.fullPath)) {
+                this.expandedNodes.delete(node.fullPath);
+            } else {
+                this.expandedNodes.add(node.fullPath);
             }
-        });
+        }
 
-        tagEl.addEventListener("dragleave", () => {
-            tagEl.removeClass("tag-drag-over");
-        });
-
-        tagEl.addEventListener("drop", (e: DragEvent) => {
-            e.preventDefault();
-            tagEl.removeClass("tag-drag-over");
-            if (this.draggedTag && this.draggedTag !== tag.name) {
-                this.moveTag(this.draggedTag, tag.name);
-            }
-        });
+        await this.renderTagsAndRestoreExpansion();
     }
 
     async removeTag(tagName: string): Promise<void> {
@@ -288,17 +319,6 @@ export class TagIndexView extends ItemView {
 
         this.plugin.settings.importantTags = normalizedTags;
         await this.plugin.saveSettings();
-        await this.renderTagsAndRestoreExpansion();
-    }
-
-    // Toggle tag expansion
-    async toggleTag(tagName: string): Promise<void> {
-        if (this.expandedTags.has(tagName)) {
-            this.expandedTags.delete(tagName);
-        } else {
-            this.expandedTags.add(tagName);
-        }
-
         await this.renderTagsAndRestoreExpansion();
     }
 
@@ -421,24 +441,13 @@ export class TagIndexView extends ItemView {
     }
 
     private async renderTagsAndRestoreExpansion(): Promise<void> {
-        const expandedBefore = new Set(this.expandedTags);
-        this.renderTags();
-        this.expandedTags = expandedBefore;
+        const expandedTagsBefore = new Set(this.expandedTags);
+        const expandedNodesBefore = new Set(this.expandedNodes);
 
-        // Repopulate note sections for expanded tags after re-rendering
-        for (const tagName of this.expandedTags) {
-            const tagEl = this.tagContainer.querySelector(
-                `[data-tag="${tagName}"]`,
-            ) as HTMLElement | null;
-            if (tagEl) {
-                const notesContainer = tagEl.querySelector(
-                    ".tag-index-tag-notes",
-                ) as HTMLElement | null;
-                if (notesContainer) {
-                    await this.populateNotesForTag(tagName, notesContainer);
-                }
-            }
-        }
+        this.renderTags();
+
+        this.expandedTags = expandedTagsBefore;
+        this.expandedNodes = expandedNodesBefore;
     }
 
     async addTag(
@@ -536,25 +545,47 @@ export class TagIndexView extends ItemView {
         return true;
     }
 
-    // Deprecated - keeping for backwards compatibility
-    async showNotesWithTag(tagName: string): Promise<void> {
-        // Find the tag element
-        const tagEl = this.tagContainer.querySelector(
-            `[data-tag="${tagName}"]`,
-        );
-        if (tagEl) {
-            // Get the collapse icon and notes container
-            const collapseIcon = tagEl.querySelector(
-                ".tag-index-collapse-icon",
-            );
-            const notesContainer = tagEl.querySelector(".tag-index-tag-notes");
+    // Sort tags by hierarchy automatically
+    async sortTagsByHierarchy(): Promise<void> {
+        const tags = [...this.plugin.settings.importantTags];
 
-            if (collapseIcon && notesContainer) {
-                // Expand the tag if it's not already expanded
-                if (!this.expandedTags.has(tagName)) {
-                    this.toggleTag(tagName);
+        // Sort by tag path, ensuring parent tags come before children
+        tags.sort((a: ImportantTag, b: ImportantTag) => {
+            const aSegments = a.name.split("/");
+            const bSegments = b.name.split("/");
+
+            // Compare segment by segment
+            for (
+                let i = 0;
+                i < Math.min(aSegments.length, bSegments.length);
+                i++
+            ) {
+                const comparison = aSegments[i].localeCompare(bSegments[i]);
+                if (comparison !== 0) {
+                    return comparison;
                 }
             }
+
+            // If all segments match, shorter path (parent) comes first
+            return aSegments.length - bSegments.length;
+        });
+
+        // Update positions
+        tags.forEach((tag: ImportantTag, index: number) => {
+            tag.position = index;
+        });
+
+        this.plugin.settings.importantTags = tags;
+        await this.plugin.saveSettings();
+        await this.renderTagsAndRestoreExpansion();
+    }
+
+    // Deprecated - keeping for backwards compatibility
+    async showNotesWithTag(tagName: string): Promise<void> {
+        // Expand the tag if it's not already expanded
+        if (!this.expandedTags.has(tagName)) {
+            this.expandedTags.add(tagName);
+            await this.renderTagsAndRestoreExpansion();
         }
     }
 

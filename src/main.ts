@@ -66,6 +66,22 @@ export default class TagIndexPlugin extends Plugin {
             },
         });
 
+        // Add command for auto-sorting tags by hierarchy
+        this.addCommand({
+            id: "sort-tags-by-hierarchy",
+            name: "Sort tags by hierarchy",
+            callback: async () => {
+                if (this.tagIndexView) {
+                    await this.tagIndexView.sortTagsByHierarchy();
+                    new Notice("Tags sorted by hierarchy");
+                } else {
+                    new Notice(
+                        "Please open the Tag Index panel first to sort tags",
+                    );
+                }
+            },
+        });
+
         // Add settings tab
         this.addSettingTab(new TagIndexSettingTab(this.app, this));
 

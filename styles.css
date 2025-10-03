@@ -13,37 +13,111 @@
   font-style: italic;
 }
 
-/* Tag styling */
-.tag-index-tag {
-  display: flex;
-  flex-direction: column;
-  border-radius: 4px;
-  background-color: var(--background-secondary);
+/* Tree structure styling */
+.tag-index-tree-item {
   position: relative;
+}
+
+.tag-index-tree-item-self {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
   transition: background-color 0.2s ease;
-  margin-bottom: 2px;
 }
 
-/* Hierarchical tag indentation */
-.tag-index-tag[data-level="1"] {
-  margin-left: 16px;
+.tag-index-tree-item-self:hover {
+  background-color: var(--background-secondary-alt);
 }
 
-.tag-index-tag[data-level="2"] {
-  margin-left: 32px;
+/* Indentation based on level */
+.tag-index-tree-item[data-level="1"] .tag-index-tree-item-self {
+  padding-left: 24px;
 }
 
-.tag-index-tag[data-level="3"] {
-  margin-left: 48px;
+.tag-index-tree-item[data-level="2"] .tag-index-tree-item-self {
+  padding-left: 40px;
 }
 
-.tag-index-tag[data-level="4"] {
-  margin-left: 64px;
+.tag-index-tree-item[data-level="3"] .tag-index-tree-item-self {
+  padding-left: 56px;
 }
 
-/* For deeper nesting, use a general rule */
-.tag-index-tag-nested {
-  border-left: 2px solid var(--background-modifier-border);
+.tag-index-tree-item[data-level="4"] .tag-index-tree-item-self {
+  padding-left: 72px;
+}
+
+/* Connection lines */
+.tag-index-tree-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 50%;
+  width: 1px;
+  background: var(--background-modifier-border);
+}
+
+.tag-index-tree-item[data-level="1"]::before {
+  left: 12px;
+}
+
+.tag-index-tree-item[data-level="2"]::before {
+  left: 28px;
+}
+
+.tag-index-tree-item[data-level="3"]::before {
+  left: 44px;
+}
+
+.tag-index-tree-item:last-child::before {
+  bottom: 50%;
+}
+
+/* Chevron icon */
+.tag-index-tree-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.tag-index-tree-item-icon-placeholder {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+/* Tree item name */
+.tag-index-tree-item-name {
+  flex: 1;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Node styling (intermediate paths) */
+.tag-index-tree-item-node {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Actual tag styling */
+.tag-index-tree-item-tag {
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+/* Children container */
+.tag-index-tree-item-children {
+  margin-left: 0;
 }
 
 .tag-index-tag-header {
@@ -72,7 +146,7 @@
 .tag-index-tag-name {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0px; /* No gap between prefix and label */
   flex: 1;
 }
 
@@ -80,11 +154,13 @@
   color: var(--text-muted);
   opacity: 0.7;
   font-size: 0.9em;
+  margin-right: 0; /* Ensure no extra margin */
 }
 
 .tag-index-tag-label {
   color: var(--text-normal);
   font-weight: 500;
+  margin-left: 0; /* Ensure no extra margin */
 }
 
 .tag-index-icon {
