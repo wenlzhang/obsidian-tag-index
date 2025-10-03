@@ -121,13 +121,17 @@ export class TagIndexView extends ItemView {
                     });
                 } else if (isLastSegment) {
                     // Update existing node to mark it as an actual tag
-                    const existingNode = currentLevel.get(segment)!;
-                    existingNode.isActualTag = true;
-                    existingNode.tag = tag;
+                    const existingNode = currentLevel.get(segment);
+                    if (existingNode) {
+                        existingNode.isActualTag = true;
+                        existingNode.tag = tag;
+                    }
                 }
 
-                const node = currentLevel.get(segment)!;
-                currentLevel = node.children;
+                const node = currentLevel.get(segment);
+                if (node) {
+                    currentLevel = node.children;
+                }
             }
         }
 
