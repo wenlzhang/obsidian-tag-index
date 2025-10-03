@@ -11,7 +11,7 @@ import {
     MarkdownView,
 } from "obsidian";
 import type TagIndexPlugin from "./main";
-import { ImportantTag, NoteSortMethod } from "./settings";
+import { ImportantTag, NoteSortMethod, TagSortMethod } from "./settings";
 
 export const TAG_INDEX_VIEW_TYPE = "tag-index-view";
 
@@ -66,30 +66,45 @@ export class TagIndexView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
 
-        // Create a minimal header with an icon instead of the text heading
+        // Create a minimal header with icons
         const headerContainer = container.createDiv({
             cls: "tag-index-header",
         });
 
-        // Add sort button
-        const sortButton = headerContainer.createSpan({
+        // Left side: Sort buttons container
+        const leftButtons = headerContainer.createDiv({
+            cls: "tag-index-header-left",
+        });
+
+        // Add tag sort button (leftmost)
+        const tagSortButton = leftButtons.createSpan({
             cls: "tag-index-sort-button",
         });
-        setIcon(sortButton, "arrow-up-down");
-        sortButton.setAttribute("title", this.getSortMethodLabel());
+        setIcon(tagSortButton, "list-ordered");
+        tagSortButton.setAttribute("title", this.getTagSortMethodLabel());
 
-        // Add click handler for sort button
-        sortButton.addEventListener("click", (e: MouseEvent) => {
-            this.showSortMenu(e, sortButton);
+        // Add click handler for tag sort button
+        tagSortButton.addEventListener("click", (e: MouseEvent) => {
+            this.showTagSortMenu(e, tagSortButton);
         });
 
-        // Add a small info icon that can show a tooltip on hover
+        // Add note sort button (next to tag sort)
+        const noteSortButton = leftButtons.createSpan({
+            cls: "tag-index-sort-button",
+        });
+        setIcon(noteSortButton, "arrow-up-down");
+        noteSortButton.setAttribute("title", this.getNoteSortMethodLabel());
+
+        // Add click handler for note sort button
+        noteSortButton.addEventListener("click", (e: MouseEvent) => {
+            this.showNoteSortMenu(e, noteSortButton);
+        });
+
+        // Right side: Info icon
         const infoIcon = headerContainer.createSpan({
             cls: "tag-index-info-icon",
         });
         setIcon(infoIcon, "info");
-
-        // Use a single title attribute for the tooltip
         infoIcon.setAttribute("title", "Important tags from tag index");
 
         this.tagContainer = container.createDiv({ cls: "tag-index-container" });
@@ -196,17 +211,147 @@ export class TagIndexView extends ItemView {
             return;
         }
 
-        // Build tree structure from all tags
-        const tree = this.buildTree();
+        // Sort tags according to user preference
+        const sortedTags = this.sortTags([
+            ...this.plugin.settings.importantTags,
+        ]);
+
+        // Build tree structure from sorted tags
+        const tree = this.buildTree(sortedTags);
 
         // Render the tree
         this.renderTree(tree, this.tagContainer, 0);
     }
 
-    private buildTree(): Map<string, TreeNode> {
-        const root = new Map<string, TreeNode>();
+    private sortTags(tags: ImportantTag[]): ImportantTag[] {
+        const method = this.plugin.settings.tagSortMethod;
 
-        for (const tag of this.plugin.settings.importantTags) {
+        // Custom order: use position-based sorting (current behavior)
+        if (method === "custom") {
+            return tags.sort((a, b) => a.position - b.position);
+        }
+
+        // Calculate frequencies for frequency-based sorting
+        const frequencies = new Map<string, number>();
+        if (method === "frequency-high" || method === "frequency-low") {
+            tags.forEach((tag) => {
+                const count = this.getTagFrequency(tag.name);
+                frequencies.set(tag.name, count);
+            });
+        }
+
+        // Apply sorting
+        const sorted = [...tags];
+        switch (method) {
+            case "frequency-high":
+                sorted.sort((a, b) => {
+                    const freqA = frequencies.get(a.name) || 0;
+                    const freqB = frequencies.get(b.name) || 0;
+                    if (freqB !== freqA) return freqB - freqA;
+                    // Secondary sort by name
+                    return a.name.localeCompare(b.name, undefined, {
+                        numeric: true,
+                        sensitivity: "base",
+                    });
+                });
+                break;
+            case "frequency-low":
+                sorted.sort((a, b) => {
+                    const freqA = frequencies.get(a.name) || 0;
+                    const freqB = frequencies.get(b.name) || 0;
+                    if (freqA !== freqB) return freqA - freqB;
+                    // Secondary sort by name
+                    return a.name.localeCompare(b.name, undefined, {
+                        numeric: true,
+                        sensitivity: "base",
+                    });
+                });
+                break;
+            case "name-asc":
+                sorted.sort((a, b) =>
+                    a.name.localeCompare(b.name, undefined, {
+                        numeric: true,
+                        sensitivity: "base",
+                    }),
+                );
+                break;
+            case "name-desc":
+                sorted.sort((a, b) =>
+                    b.name.localeCompare(a.name, undefined, {
+                        numeric: true,
+                        sensitivity: "base",
+                    }),
+                );
+                break;
+            case "added-new":
+                sorted.sort((a, b) => {
+                    const timeA = a.addedTime || 0;
+                    const timeB = b.addedTime || 0;
+                    if (timeB !== timeA) return timeB - timeA;
+                    // Secondary sort by position for tags without timestamp
+                    return a.position - b.position;
+                });
+                break;
+            case "added-old":
+                sorted.sort((a, b) => {
+                    const timeA = a.addedTime || 0;
+                    const timeB = b.addedTime || 0;
+                    if (timeA !== timeB) return timeA - timeB;
+                    // Secondary sort by position for tags without timestamp
+                    return a.position - b.position;
+                });
+                break;
+        }
+
+        return sorted;
+    }
+
+    private getTagFrequency(tagName: string): number {
+        const tagNameWithoutHash = tagName.startsWith("#")
+            ? tagName.substring(1)
+            : tagName;
+
+        // Count files that contain this tag
+        const count = this.app.vault
+            .getMarkdownFiles()
+            .filter((file: TFile) => {
+                const cache = this.app.metadataCache.getFileCache(file);
+                if (!cache) return false;
+
+                // Check inline tags
+                if (cache.tags) {
+                    const hasInlineTag = cache.tags.some(
+                        (tagCache) => tagCache.tag === `#${tagNameWithoutHash}`,
+                    );
+                    if (hasInlineTag) return true;
+                }
+
+                // Check frontmatter tags
+                if (cache.frontmatter && cache.frontmatter.tags) {
+                    const frontmatterTags = cache.frontmatter.tags;
+                    if (Array.isArray(frontmatterTags)) {
+                        return frontmatterTags.some(
+                            (tag) => tag === tagNameWithoutHash,
+                        );
+                    } else if (typeof frontmatterTags === "string") {
+                        return frontmatterTags
+                            .split(",")
+                            .map((t) => t.trim())
+                            .includes(tagNameWithoutHash);
+                    }
+                }
+
+                return false;
+            }).length;
+
+        return count;
+    }
+
+    private buildTree(tags?: ImportantTag[]): Map<string, TreeNode> {
+        const root = new Map<string, TreeNode>();
+        const tagsToUse = tags || this.plugin.settings.importantTags;
+
+        for (const tag of tagsToUse) {
             const segments = tag.name.split("/");
             let currentLevel = root;
             let currentPath = "";
@@ -272,17 +417,45 @@ export class TagIndexView extends ItemView {
         level: number,
     ): void {
         const sortedNodes = Array.from(nodes.values()).sort((a, b) => {
-            const posA = this.getEffectivePosition(a);
-            const posB = this.getEffectivePosition(b);
+            // For custom sort, use position
+            if (this.plugin.settings.tagSortMethod === "custom") {
+                const posA = this.getEffectivePosition(a);
+                const posB = this.getEffectivePosition(b);
 
-            // Sort by position
-            if (posA !== posB) {
-                return posA - posB;
+                if (posA !== posB) {
+                    return posA - posB;
+                }
+
+                return a.name.localeCompare(b.name);
             }
 
-            // If positions are equal (shouldn't happen for well-formed data),
-            // fall back to alphabetical sorting
-            return a.name.localeCompare(b.name);
+            // For other sort methods, we've already sorted the tags before building the tree
+            // But for tree nodes (intermediate nodes without tags), we sort by name
+            const tagA = a.tag;
+            const tagB = b.tag;
+
+            // If both are actual tags, they should already be in the right order from sortTags
+            // Just maintain their relative order by comparing the sorted tag list
+            if (tagA && tagB) {
+                const sortedTags = this.sortTags([
+                    ...this.plugin.settings.importantTags,
+                ]);
+                const indexA = sortedTags.findIndex(
+                    (t) => t.name === tagA.name,
+                );
+                const indexB = sortedTags.findIndex(
+                    (t) => t.name === tagB.name,
+                );
+                if (indexA !== -1 && indexB !== -1) {
+                    return indexA - indexB;
+                }
+            }
+
+            // For intermediate nodes or fallback, sort alphabetically
+            return a.fullPath.localeCompare(b.fullPath, undefined, {
+                numeric: true,
+                sensitivity: "base",
+            });
         });
 
         for (const node of sortedNodes) {
@@ -347,48 +520,75 @@ export class TagIndexView extends ItemView {
             });
         }
 
-        // Make all nodes draggable (both actual tags and intermediate nodes)
-        headerEl.setAttribute("draggable", "true");
-        headerEl.addEventListener("dragstart", (e: DragEvent) => {
-            this.draggedTag = node.fullPath;
-            this.draggedNode = node;
-            this.draggedElement = nodeEl;
-            nodeEl.addClass("tag-being-dragged");
-            if (e.dataTransfer) {
-                e.dataTransfer.setData("text/plain", node.fullPath);
-                e.dataTransfer.effectAllowed = "move";
-            }
-        });
+        // Only enable drag-and-drop in custom sort mode
+        const isCustomMode = this.plugin.settings.tagSortMethod === "custom";
 
-        headerEl.addEventListener("dragend", () => {
-            nodeEl.removeClass("tag-being-dragged");
-            this.draggedTag = null;
-            this.draggedNode = null;
-            this.draggedElement = null;
-        });
+        if (isCustomMode) {
+            // Make all nodes draggable (both actual tags and intermediate nodes)
+            headerEl.setAttribute("draggable", "true");
+            headerEl.addEventListener("dragstart", (e: DragEvent) => {
+                this.draggedTag = node.fullPath;
+                this.draggedNode = node;
+                this.draggedElement = nodeEl;
+                nodeEl.addClass("tag-being-dragged");
+                if (e.dataTransfer) {
+                    e.dataTransfer.setData("text/plain", node.fullPath);
+                    e.dataTransfer.effectAllowed = "move";
+                }
+            });
 
-        nodeEl.addEventListener("dragover", (e: DragEvent) => {
-            e.preventDefault();
-            if (this.draggedTag && this.draggedTag !== node.fullPath) {
-                nodeEl.addClass("tag-drag-over");
-            }
-        });
+            headerEl.addEventListener("dragend", () => {
+                nodeEl.removeClass("tag-being-dragged");
+                this.draggedTag = null;
+                this.draggedNode = null;
+                this.draggedElement = null;
+            });
 
-        nodeEl.addEventListener("dragleave", () => {
-            nodeEl.removeClass("tag-drag-over");
-        });
+            nodeEl.addEventListener("dragover", (e: DragEvent) => {
+                e.preventDefault();
+                if (this.draggedTag && this.draggedTag !== node.fullPath) {
+                    nodeEl.addClass("tag-drag-over");
+                }
+            });
 
-        nodeEl.addEventListener("drop", (e: DragEvent) => {
-            e.preventDefault();
-            nodeEl.removeClass("tag-drag-over");
-            if (
-                this.draggedTag &&
-                this.draggedTag !== node.fullPath &&
-                this.draggedNode
-            ) {
-                this.moveNodeOrTag(this.draggedNode, node);
-            }
-        });
+            nodeEl.addEventListener("dragleave", () => {
+                nodeEl.removeClass("tag-drag-over");
+            });
+
+            nodeEl.addEventListener("drop", (e: DragEvent) => {
+                e.preventDefault();
+                nodeEl.removeClass("tag-drag-over");
+                if (
+                    this.draggedTag &&
+                    this.draggedTag !== node.fullPath &&
+                    this.draggedNode
+                ) {
+                    this.moveNodeOrTag(this.draggedNode, node);
+                }
+            });
+
+            // Add visual indicator for draggable items
+            headerEl.addClass("tag-index-draggable");
+        } else {
+            // In non-custom mode, show a notice when user tries to interact
+            headerEl.setAttribute("draggable", "false");
+            let dragAttemptNoticeShown = false;
+
+            headerEl.addEventListener("mousedown", () => {
+                // Reset the flag when user starts a new interaction
+                dragAttemptNoticeShown = false;
+            });
+
+            headerEl.addEventListener("dragstart", (e: DragEvent) => {
+                e.preventDefault();
+                if (!dragAttemptNoticeShown) {
+                    new Notice(
+                        "Drag and drop is only available in custom sort mode. Change sort method to 'Custom order' to rearrange tags.",
+                    );
+                    dragAttemptNoticeShown = true;
+                }
+            });
+        }
 
         // Add children container
         const childrenContainer = nodeEl.createDiv({
@@ -441,27 +641,118 @@ export class TagIndexView extends ItemView {
         await this.plugin.saveSettings();
     }
 
-    private getSortMethodLabel(): string {
+    private getNoteSortMethodLabel(): string {
         const method = this.plugin.settings.noteSortMethod;
         switch (method) {
             case "file-name-asc":
-                return "Sort by: File name (A to Z)";
+                return "Sort notes: File name (A to Z)";
             case "file-name-desc":
-                return "Sort by: File name (Z to A)";
+                return "Sort notes: File name (Z to A)";
             case "modified-new":
-                return "Sort by: Modified time (new to old)";
+                return "Sort notes: Modified time (new to old)";
             case "modified-old":
-                return "Sort by: Modified time (old to new)";
+                return "Sort notes: Modified time (old to new)";
             case "created-new":
-                return "Sort by: Created time (new to old)";
+                return "Sort notes: Created time (new to old)";
             case "created-old":
-                return "Sort by: Created time (old to new)";
+                return "Sort notes: Created time (old to new)";
             default:
-                return "Sort by: File name (A to Z)";
+                return "Sort notes: File name (A to Z)";
         }
     }
 
-    private showSortMenu(event: MouseEvent, buttonEl: HTMLElement): void {
+    private getTagSortMethodLabel(): string {
+        const method = this.plugin.settings.tagSortMethod;
+        switch (method) {
+            case "custom":
+                return "Sort tags: Custom order";
+            case "frequency-high":
+                return "Sort tags: Frequency (high to low)";
+            case "frequency-low":
+                return "Sort tags: Frequency (low to high)";
+            case "name-asc":
+                return "Sort tags: Tag name (A to Z)";
+            case "name-desc":
+                return "Sort tags: Tag name (Z to A)";
+            case "added-new":
+                return "Sort tags: Added time (new to old)";
+            case "added-old":
+                return "Sort tags: Added time (old to new)";
+            default:
+                return "Sort tags: Custom order";
+        }
+    }
+
+    private showTagSortMenu(event: MouseEvent, buttonEl: HTMLElement): void {
+        const menu = new Menu();
+        const currentMethod = this.plugin.settings.tagSortMethod;
+
+        menu.addItem((item) => {
+            item.setTitle("Custom order")
+                .setChecked(currentMethod === "custom")
+                .onClick(async () => {
+                    await this.setTagSortMethod("custom");
+                });
+        });
+
+        menu.addSeparator();
+
+        menu.addItem((item) => {
+            item.setTitle("Frequency (high to low)")
+                .setChecked(currentMethod === "frequency-high")
+                .onClick(async () => {
+                    await this.setTagSortMethod("frequency-high");
+                });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle("Frequency (low to high)")
+                .setChecked(currentMethod === "frequency-low")
+                .onClick(async () => {
+                    await this.setTagSortMethod("frequency-low");
+                });
+        });
+
+        menu.addSeparator();
+
+        menu.addItem((item) => {
+            item.setTitle("Tag name (A to Z)")
+                .setChecked(currentMethod === "name-asc")
+                .onClick(async () => {
+                    await this.setTagSortMethod("name-asc");
+                });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle("Tag name (Z to A)")
+                .setChecked(currentMethod === "name-desc")
+                .onClick(async () => {
+                    await this.setTagSortMethod("name-desc");
+                });
+        });
+
+        menu.addSeparator();
+
+        menu.addItem((item) => {
+            item.setTitle("Added time (new to old)")
+                .setChecked(currentMethod === "added-new")
+                .onClick(async () => {
+                    await this.setTagSortMethod("added-new");
+                });
+        });
+
+        menu.addItem((item) => {
+            item.setTitle("Added time (old to new)")
+                .setChecked(currentMethod === "added-old")
+                .onClick(async () => {
+                    await this.setTagSortMethod("added-old");
+                });
+        });
+
+        menu.showAtMouseEvent(event);
+    }
+
+    private showNoteSortMenu(event: MouseEvent, buttonEl: HTMLElement): void {
         const menu = new Menu();
         const currentMethod = this.plugin.settings.noteSortMethod;
 
@@ -524,12 +815,44 @@ export class TagIndexView extends ItemView {
         this.plugin.settings.noteSortMethod = method;
         await this.plugin.saveSettings();
 
-        // Update the sort button tooltip
-        const sortButton = this.containerEl.querySelector(
-            ".tag-index-sort-button",
+        // Update the note sort button tooltip (second button in left container)
+        const leftButtons = this.containerEl.querySelector(
+            ".tag-index-header-left",
         );
-        if (sortButton) {
-            sortButton.setAttribute("title", this.getSortMethodLabel());
+        if (leftButtons) {
+            const noteSortButton = leftButtons.querySelectorAll(
+                ".tag-index-sort-button",
+            )[1];
+            if (noteSortButton) {
+                noteSortButton.setAttribute(
+                    "title",
+                    this.getNoteSortMethodLabel(),
+                );
+            }
+        }
+
+        // Re-render to apply new sorting
+        await this.renderTagsAndRestoreExpansion();
+    }
+
+    private async setTagSortMethod(method: TagSortMethod): Promise<void> {
+        this.plugin.settings.tagSortMethod = method;
+        await this.plugin.saveSettings();
+
+        // Update the tag sort button tooltip (first button in left container)
+        const leftButtons = this.containerEl.querySelector(
+            ".tag-index-header-left",
+        );
+        if (leftButtons) {
+            const tagSortButton = leftButtons.querySelector(
+                ".tag-index-sort-button",
+            );
+            if (tagSortButton) {
+                tagSortButton.setAttribute(
+                    "title",
+                    this.getTagSortMethodLabel(),
+                );
+            }
         }
 
         // Re-render to apply new sorting
@@ -1067,6 +1390,7 @@ export class TagIndexView extends ItemView {
                 name: cleanTagName,
                 position: 0,
                 isNested: shouldTreatAsNested,
+                addedTime: Date.now(),
             };
 
             // Add to the beginning of the array
@@ -1078,6 +1402,7 @@ export class TagIndexView extends ItemView {
                 name: cleanTagName,
                 position: newPosition,
                 isNested: shouldTreatAsNested,
+                addedTime: Date.now(),
             };
 
             // Add to the end of the array

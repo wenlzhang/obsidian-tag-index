@@ -4,6 +4,7 @@ export interface ImportantTag {
     name: string;
     position: number;
     isNested?: boolean; // Whether this tag was added from a hierarchical context
+    addedTime?: number; // Timestamp when tag was added to index
 }
 
 export type NoteSortMethod =
@@ -13,6 +14,15 @@ export type NoteSortMethod =
     | "modified-old"
     | "created-new"
     | "created-old";
+
+export type TagSortMethod =
+    | "custom"
+    | "frequency-high"
+    | "frequency-low"
+    | "name-asc"
+    | "name-desc"
+    | "added-new"
+    | "added-old";
 
 export interface TagIndexSettings {
     importantTags: ImportantTag[];
@@ -26,6 +36,7 @@ export interface TagIndexSettings {
     cursorPosition: "start" | "end"; // Where to place cursor when jumping to line
     refreshDelay: number; // Delay in milliseconds before refreshing after file changes (0-3600000ms = 0-60min)
     noteSortMethod: NoteSortMethod; // How to sort notes under tags
+    tagSortMethod: TagSortMethod; // How to sort tags in the index
 }
 
 export const DEFAULT_SETTINGS: TagIndexSettings = {
@@ -40,4 +51,5 @@ export const DEFAULT_SETTINGS: TagIndexSettings = {
     cursorPosition: "end",
     refreshDelay: 500,
     noteSortMethod: "modified-new",
+    tagSortMethod: "custom",
 };

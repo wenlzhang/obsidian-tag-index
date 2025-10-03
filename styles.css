@@ -296,6 +296,12 @@
   margin-bottom: 4px;
 }
 
+.tag-index-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .tag-index-sort-button {
   color: var(--text-muted);
   cursor: pointer;
@@ -324,6 +330,15 @@
 .tag-index-info-icon:hover {
   opacity: 1;
   color: var(--text-normal);
+}
+
+/* Draggable indicator */
+.tag-index-draggable {
+  cursor: grab;
+}
+
+.tag-index-draggable:active {
+  cursor: grabbing;
 }
 
 /* Notes container within a tag - OLD STYLE, KEEPING FOR COMPATIBILITY */

@@ -137,9 +137,33 @@ export class TagIndexSettingTab extends PluginSettingTab {
         }
 
         new Setting(containerEl)
+            .setName("Default tag sort method")
+            .setDesc(
+                "Choose how tags in the index are sorted. Custom order allows drag-and-drop. You can also change this by clicking the left sort button (list icon) in the tag panel.",
+            )
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption("custom", "Custom order")
+                    .addOption("frequency-high", "Frequency (high to low)")
+                    .addOption("frequency-low", "Frequency (low to high)")
+                    .addOption("name-asc", "Tag name (A to Z)")
+                    .addOption("name-desc", "Tag name (Z to A)")
+                    .addOption("added-new", "Added time (new to old)")
+                    .addOption("added-old", "Added time (old to new)")
+                    .setValue(this.plugin.settings.tagSortMethod)
+                    .onChange(async (value) => {
+                        this.plugin.settings.tagSortMethod = value as any;
+                        await this.plugin.saveSettings();
+                        if (this.plugin.tagIndexView) {
+                            await this.plugin.tagIndexView.renderTagsAndRestoreExpansion();
+                        }
+                    }),
+            );
+
+        new Setting(containerEl)
             .setName("Default note sort method")
             .setDesc(
-                "Choose how notes under each tag should be sorted. You can also change this by clicking the sort button in the tag index panel.",
+                "Choose how notes under each tag are sorted. You can also change this by clicking the right sort button (arrow icon) in the tag panel.",
             )
             .addDropdown((dropdown) =>
                 dropdown
