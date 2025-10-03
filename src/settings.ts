@@ -3,6 +3,7 @@ import { App } from "obsidian";
 export interface ImportantTag {
     name: string;
     position: number;
+    isNested?: boolean; // Whether this tag was added from a hierarchical context
 }
 
 export interface TagIndexSettings {

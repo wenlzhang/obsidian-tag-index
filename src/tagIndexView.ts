@@ -58,7 +58,7 @@ export class TagIndexView extends ItemView {
 
         this.tagContainer = container.createDiv({ cls: "tag-index-container" });
 
-        this.renderTags();
+        await this.renderTagsAndRestoreExpansion();
     }
 
     async onClose(): Promise<void> {
@@ -81,23 +81,86 @@ export class TagIndexView extends ItemView {
             (a: ImportantTag, b: ImportantTag) => a.position - b.position,
         );
 
+        // Build a hierarchy map based on tag paths
+        const hierarchyMap = new Map<string, ImportantTag[]>();
         for (const tag of sortedTags) {
-            this.createTagElement(tag);
+            this.addTagToHierarchy(hierarchyMap, tag.name, tag);
+        }
+
+        const rendered = new Set<string>();
+
+        for (const tag of sortedTags) {
+            if (!rendered.has(tag.name)) {
+                this.renderTagRecursive(hierarchyMap, tag.name, rendered);
+            }
         }
     }
 
-    createTagElement(tag: ImportantTag): void {
-        const tagEl = this.tagContainer.createDiv({ cls: "tag-index-tag" });
-        tagEl.setAttribute("data-tag", tag.name);
+    private renderTagRecursive(
+        hierarchyMap: Map<string, ImportantTag[]>,
+        tagName: string,
+        rendered: Set<string>,
+    ): void {
+        const tag = this.plugin.settings.importantTags.find(
+            (t) => t.name === tagName,
+        );
 
-        // Determine if this tag is expanded
-        const isExpanded = this.expandedTags.has(tag.name);
+        if (!tag) {
+            return;
+        }
+
+        rendered.add(tagName);
+        const shouldExpand = this.expandedTags.has(tagName);
+        this.createTagElement(tag, shouldExpand);
+
+        const children = hierarchyMap.get(tagName);
+        if (children && shouldExpand) {
+            for (const child of children) {
+                if (!rendered.has(child.name)) {
+                    this.renderTagRecursive(hierarchyMap, child.name, rendered);
+                }
+            }
+        }
+    }
+
+    private addTagToHierarchy(
+        hierarchyMap: Map<string, ImportantTag[]>,
+        tagName: string,
+        tag: ImportantTag,
+    ): void {
+        const segments = tagName.split("/");
+        for (let i = segments.length - 1; i > 0; i--) {
+            const parent = segments.slice(0, i).join("/");
+            const children = hierarchyMap.get(parent) ?? [];
+            if (!children.some((child) => child.name === tagName)) {
+                children.push(tag);
+                hierarchyMap.set(parent, children);
+            }
+        }
+    }
+
+    private createTagElement(tag: ImportantTag, isExpanded: boolean): void {
+        const tagEl = this.tagContainer.createDiv({ cls: "tag-index-tag" });
+        const tagSegments = tag.name.split("/");
+        const level = Math.max(tagSegments.length - 1, 0);
+        const parentPath =
+            tagSegments.length > 1 ? tagSegments.slice(0, -1).join("/") : "";
+        const displayLabel = tagSegments[tagSegments.length - 1] ?? tag.name;
+        const isNested = tag.isNested ?? level > 0;
+
+        tagEl.setAttribute("data-tag", tag.name);
+        tagEl.setAttribute("data-level", level.toString());
+        if (isNested && level > 0) {
+            tagEl.addClass("tag-index-tag-nested");
+        }
+
         if (isExpanded) {
             tagEl.addClass("tag-expanded");
         }
 
         // Tag header container (single row with all controls)
         const tagHeader = tagEl.createDiv({ cls: "tag-index-tag-header" });
+        tagHeader.setAttribute("title", `#${tag.name}`);
 
         // Create expand/collapse icon
         const collapseIcon = tagHeader.createDiv({
@@ -109,7 +172,14 @@ export class TagIndexView extends ItemView {
         const tagNameContainer = tagHeader.createDiv({
             cls: "tag-index-tag-name",
         });
-        tagNameContainer.createSpan().setText(tag.name);
+        if (parentPath) {
+            tagNameContainer
+                .createSpan({ cls: "tag-index-tag-prefix" })
+                .setText(`${parentPath}/`);
+        }
+        tagNameContainer
+            .createSpan({ cls: "tag-index-tag-label" })
+            .setText(displayLabel);
 
         // Remove button on the right
         const removeButton = tagHeader.createDiv({
@@ -136,7 +206,7 @@ export class TagIndexView extends ItemView {
 
         // Click to expand/collapse tag
         tagHeader.addEventListener("click", () => {
-            this.toggleTag(tag.name, tagEl, collapseIcon, notesContainer);
+            this.toggleTag(tag.name);
         });
 
         // Make tag draggable
@@ -184,7 +254,7 @@ export class TagIndexView extends ItemView {
                 (t: ImportantTag) => t.name !== tagName,
             );
         await this.plugin.saveSettings();
-        this.renderTags();
+        await this.renderTagsAndRestoreExpansion();
     }
 
     async moveTag(sourceTagName: string, targetTagName: string): Promise<void> {
@@ -218,42 +288,18 @@ export class TagIndexView extends ItemView {
 
         this.plugin.settings.importantTags = normalizedTags;
         await this.plugin.saveSettings();
-        this.renderTags();
+        await this.renderTagsAndRestoreExpansion();
     }
 
     // Toggle tag expansion
-    async toggleTag(
-        tagName: string,
-        tagEl: HTMLElement,
-        collapseIcon: HTMLElement,
-        notesContainer: HTMLElement,
-    ): Promise<void> {
-        const isExpanded = this.expandedTags.has(tagName);
-
-        if (isExpanded) {
-            // Collapse
+    async toggleTag(tagName: string): Promise<void> {
+        if (this.expandedTags.has(tagName)) {
             this.expandedTags.delete(tagName);
-            notesContainer.addClass("tag-index-display-none");
-            notesContainer.removeClass("tag-index-display-block");
-            tagEl.removeClass("tag-expanded");
-            setIcon(collapseIcon, "chevron-right");
         } else {
-            // Expand
             this.expandedTags.add(tagName);
-            tagEl.addClass("tag-expanded");
-            setIcon(collapseIcon, "chevron-down");
-
-            // Show loading indicator
-            notesContainer.empty();
-            notesContainer
-                .createDiv({ cls: "tag-index-loading" })
-                .setText("Loading notes...");
-            notesContainer.removeClass("tag-index-display-none");
-            notesContainer.addClass("tag-index-display-block");
-
-            // Populate notes
-            await this.populateNotesForTag(tagName, notesContainer);
         }
+
+        await this.renderTagsAndRestoreExpansion();
     }
 
     // Populate notes for a tag
@@ -374,7 +420,31 @@ export class TagIndexView extends ItemView {
         }
     }
 
-    async addTag(tagName: string): Promise<boolean> {
+    private async renderTagsAndRestoreExpansion(): Promise<void> {
+        const expandedBefore = new Set(this.expandedTags);
+        this.renderTags();
+        this.expandedTags = expandedBefore;
+
+        // Repopulate note sections for expanded tags after re-rendering
+        for (const tagName of this.expandedTags) {
+            const tagEl = this.tagContainer.querySelector(
+                `[data-tag="${tagName}"]`,
+            ) as HTMLElement | null;
+            if (tagEl) {
+                const notesContainer = tagEl.querySelector(
+                    ".tag-index-tag-notes",
+                ) as HTMLElement | null;
+                if (notesContainer) {
+                    await this.populateNotesForTag(tagName, notesContainer);
+                }
+            }
+        }
+    }
+
+    async addTag(
+        tagName: string,
+        options?: { isNested?: boolean },
+    ): Promise<boolean> {
         // Store the tag name consistently without the # prefix
         let cleanTagName = tagName;
 
@@ -408,6 +478,10 @@ export class TagIndexView extends ItemView {
             // and not just a legitimate tag with numbers
         }
 
+        // Determine whether this tag should be treated as nested
+        const shouldTreatAsNested =
+            options?.isNested ?? cleanTagName.includes("/");
+
         // Check if tag already exists
         if (
             this.plugin.settings.importantTags.some(
@@ -428,9 +502,10 @@ export class TagIndexView extends ItemView {
             }
 
             // Then add the new tag at position 0
-            const newTag = {
+            const newTag: ImportantTag = {
                 name: cleanTagName,
                 position: 0,
+                isNested: shouldTreatAsNested,
             };
 
             // Add to the beginning of the array
@@ -438,9 +513,10 @@ export class TagIndexView extends ItemView {
         } else {
             // When adding to bottom, position is the length of the current array
             const newPosition = importantTags.length;
-            const newTag = {
+            const newTag: ImportantTag = {
                 name: cleanTagName,
                 position: newPosition,
+                isNested: shouldTreatAsNested,
             };
 
             // Add to the end of the array
@@ -454,7 +530,7 @@ export class TagIndexView extends ItemView {
         await this.plugin.saveSettings();
 
         // Refresh the view
-        this.renderTags();
+        await this.renderTagsAndRestoreExpansion();
 
         // Return true to indicate success
         return true;
@@ -476,12 +552,7 @@ export class TagIndexView extends ItemView {
             if (collapseIcon && notesContainer) {
                 // Expand the tag if it's not already expanded
                 if (!this.expandedTags.has(tagName)) {
-                    this.toggleTag(
-                        tagName,
-                        tagEl as HTMLElement,
-                        collapseIcon as HTMLElement,
-                        notesContainer as HTMLElement,
-                    );
+                    this.toggleTag(tagName);
                 }
             }
         }

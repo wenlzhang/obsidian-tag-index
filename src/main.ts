@@ -148,6 +148,11 @@ export default class TagIndexPlugin extends Plugin {
     }
 
     setupTagPaneContextMenu() {
+        const normalizeTagName = (value: string): string => {
+            const trimmed = value.trim();
+            return trimmed.startsWith("#") ? trimmed.substring(1) : trimmed;
+        };
+
         // This handler function gets the same menu that Tag Wrangler uses
         const handleContextMenu = (
             event: ExtendedMouseEvent,
@@ -158,14 +163,46 @@ export default class TagIndexPlugin extends Plugin {
 
             // If data-tag is available, use it (this is the clean tag name)
             // Otherwise, try to extract from text content
-            let tagName = dataTag;
+            let tagName = dataTag ? normalizeTagName(dataTag) : null;
+            let currentElement: HTMLElement | null = target;
+            let candidateMaxDepth = tagName
+                ? (tagName.match(/\//g) || []).length
+                : -1;
+            let candidateMaxLength = tagName ? tagName.length : -1;
+
+            // Traverse up to find parent tag elements and prefer the deepest path
+            while (currentElement) {
+                if (currentElement.hasAttribute("data-tag")) {
+                    const rawCandidate =
+                        currentElement.getAttribute("data-tag");
+                    if (rawCandidate) {
+                        const cleanCandidate = normalizeTagName(rawCandidate);
+                        const depth = (cleanCandidate.match(/\//g) || [])
+                            .length;
+                        if (
+                            depth > candidateMaxDepth ||
+                            (depth === candidateMaxDepth &&
+                                cleanCandidate.length > candidateMaxLength)
+                        ) {
+                            tagName = cleanCandidate;
+                            candidateMaxDepth = depth;
+                            candidateMaxLength = cleanCandidate.length;
+                        }
+                    }
+                }
+                currentElement = currentElement.parentElement;
+            }
 
             // Fallback: try to extract from text content if data-tag is not available
             if (!tagName) {
                 // First see if the element has any parent with a data-tag attribute
                 const parentWithDataTag = target.closest("[data-tag]");
                 if (parentWithDataTag) {
-                    tagName = parentWithDataTag.getAttribute("data-tag");
+                    const parentTag =
+                        parentWithDataTag.getAttribute("data-tag");
+                    if (parentTag) {
+                        tagName = normalizeTagName(parentTag);
+                    }
                 }
 
                 // If still no tag name, try text content
@@ -175,7 +212,7 @@ export default class TagIndexPlugin extends Plugin {
                     if (innerText && innerText.includes("\n")) {
                         // If there's a linebreak, the tag name is the part before it
                         const parts = innerText.split("\n");
-                        tagName = parts[0].trim();
+                        tagName = normalizeTagName(parts[0]);
                     }
                     // Fallback to textContent if innerText doesn't work
                     else {
@@ -188,7 +225,9 @@ export default class TagIndexPlugin extends Plugin {
                         );
 
                         // Check if removing last character results in a valid tag
-                        const withoutLastChar = tagText.slice(0, -1);
+                        const withoutLastChar = normalizeTagName(
+                            tagText.slice(0, -1),
+                        );
 
                         // The key improvement: check if the remaining part (after removing the last digit)
                         // matches a tag we already know about
@@ -199,18 +238,21 @@ export default class TagIndexPlugin extends Plugin {
                         else if (tagText.match(/^(.*?)\s+\d+$/)) {
                             const match = tagText.match(/^(.*?)\s+\d+$/);
                             if (match) {
-                                tagName = match[1].trim();
+                                tagName = normalizeTagName(match[1]);
                             }
                         }
                         // Use the exact text if nothing else matches
                         else {
-                            tagName = tagText;
+                            tagName = normalizeTagName(tagText);
                         }
                     }
                 }
             }
 
             if (!tagName) return;
+
+            const isNested = tagName.includes("/");
+            const tagToAdd = tagName.startsWith("#") ? tagName : `#${tagName}`;
 
             // Get or create a menu for this event
             let menu: Menu;
@@ -247,11 +289,7 @@ export default class TagIndexPlugin extends Plugin {
                 item.setTitle("Add to tag index")
                     .setIcon("plus")
                     .onClick(() => {
-                        // Add the # prefix if needed
-                        const tagToAdd = tagName.startsWith("#")
-                            ? tagName
-                            : `#${tagName}`;
-                        this.addTagToIndex(tagToAdd);
+                        this.addTagToIndex(tagToAdd, { isNested });
                     });
             });
         };
@@ -322,7 +360,7 @@ export default class TagIndexPlugin extends Plugin {
         }
     }
 
-    async addTagToIndex(tagName: string) {
+    async addTagToIndex(tagName: string, options?: { isNested?: boolean }) {
         // Ensure the tag index view is available
         if (!this.tagIndexView) {
             await this.activateView();
@@ -337,7 +375,7 @@ export default class TagIndexPlugin extends Plugin {
         }
 
         // Add the tag to the index and get the result
-        const success = await this.tagIndexView.addTag(tagName);
+        const success = await this.tagIndexView.addTag(tagName, options);
 
         // Show appropriate notification based on the result
         if (success) {

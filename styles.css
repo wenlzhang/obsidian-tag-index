@@ -24,6 +24,28 @@
   margin-bottom: 2px;
 }
 
+/* Hierarchical tag indentation */
+.tag-index-tag[data-level="1"] {
+  margin-left: 16px;
+}
+
+.tag-index-tag[data-level="2"] {
+  margin-left: 32px;
+}
+
+.tag-index-tag[data-level="3"] {
+  margin-left: 48px;
+}
+
+.tag-index-tag[data-level="4"] {
+  margin-left: 64px;
+}
+
+/* For deeper nesting, use a general rule */
+.tag-index-tag-nested {
+  border-left: 2px solid var(--background-modifier-border);
+}
+
 .tag-index-tag-header {
   display: flex;
   align-items: center;
@@ -52,6 +74,17 @@
   align-items: center;
   gap: 6px;
   flex: 1;
+}
+
+.tag-index-tag-prefix {
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.tag-index-tag-label {
+  color: var(--text-normal);
+  font-weight: 500;
 }
 
 .tag-index-icon {
