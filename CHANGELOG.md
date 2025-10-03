@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.6.1] - 2025-10-03
+
+### Changes
+
+- feat: enable drag and drop for intermediate tag nodes with position preservation
+- feat: implement tag position sorting and fix tag array mutation issues
+
 ## [0.6.0] - 2025-10-03
 
 ### Changes
