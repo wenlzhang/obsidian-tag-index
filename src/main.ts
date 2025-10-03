@@ -158,39 +158,55 @@ export default class TagIndexPlugin extends Plugin {
             event: ExtendedMouseEvent,
             target: HTMLElement,
         ) => {
-            // In the tag pane, the data-tag attribute contains the actual tag name
-            const dataTag = target.getAttribute("data-tag");
+            // IMPROVED: Extract tag from Obsidian's tag pane DOM structure
+            let tagName: string | null = null;
 
-            // If data-tag is available, use it (this is the clean tag name)
-            // Otherwise, try to extract from text content
-            let tagName = dataTag ? normalizeTagName(dataTag) : null;
-            let currentElement: HTMLElement | null = target;
-            let candidateMaxDepth = tagName
-                ? (tagName.match(/\//g) || []).length
-                : -1;
-            let candidateMaxLength = tagName ? tagName.length : -1;
+            // Look for the tag-pane-tag-parent span (contains parent path like "tag/")
+            const parentSpan = target.querySelector(".tag-pane-tag-parent");
+            // Look for the tree-item-inner-text span (contains the segment name)
+            const innerTextSpans = target.querySelectorAll(
+                ".tree-item-inner-text",
+            );
 
-            // Traverse up to find parent tag elements and prefer the deepest path
-            while (currentElement) {
-                if (currentElement.hasAttribute("data-tag")) {
-                    const rawCandidate =
-                        currentElement.getAttribute("data-tag");
-                    if (rawCandidate) {
-                        const cleanCandidate = normalizeTagName(rawCandidate);
-                        const depth = (cleanCandidate.match(/\//g) || [])
-                            .length;
-                        if (
-                            depth > candidateMaxDepth ||
-                            (depth === candidateMaxDepth &&
-                                cleanCandidate.length > candidateMaxLength)
-                        ) {
-                            tagName = cleanCandidate;
-                            candidateMaxDepth = depth;
-                            candidateMaxLength = cleanCandidate.length;
-                        }
-                    }
+            if (parentSpan && innerTextSpans.length > 0) {
+                // For nested tags: combine parent path with segment name
+                const parentPath = parentSpan.textContent?.trim() || "";
+                // The second .tree-item-inner-text is the actual segment (first is the parent div)
+                const segmentName =
+                    innerTextSpans[
+                        innerTextSpans.length - 1
+                    ].textContent?.trim() || "";
+
+                if (parentPath && segmentName) {
+                    // Parent path includes trailing slash (e.g., "tag/")
+                    // Remove it and combine with segment
+                    const cleanParent = parentPath.replace(/\/$/, "");
+                    tagName = `${cleanParent}/${segmentName}`;
                 }
-                currentElement = currentElement.parentElement;
+            } else if (innerTextSpans.length > 0) {
+                // For root-level tags: just get the segment name
+                const segmentName =
+                    innerTextSpans[
+                        innerTextSpans.length - 1
+                    ].textContent?.trim() || "";
+                if (segmentName) {
+                    tagName = segmentName;
+                }
+            }
+
+            // Debug logging
+            if (this.settings.debugMode) {
+                console.log("Tag extraction debug:");
+                console.log("  Parent path:", parentSpan?.textContent);
+                console.log(
+                    "  Inner text spans:",
+                    Array.from(innerTextSpans).map((s: Element) =>
+                        s.textContent?.trim(),
+                    ),
+                );
+                console.log("  Final tag name:", tagName);
+                console.log("  Target element:", target);
+                console.log("  Target innerHTML:", target.innerHTML);
             }
 
             // Fallback: try to extract from text content if data-tag is not available
