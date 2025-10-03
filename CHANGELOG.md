@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.6.0] - 2025-10-03
+
+### Changes
+
+- fix: improve tag name extraction from nested tag pane DOM structure
+- docs: add getting started guide and expand feature documentation in README
+- feat: add configurable refresh delay with intelligent file change detection
+- style: adjust tag index spacing and font sizes for better visual density
+- feat: conditionally show line content settings based on parent toggle
+- feat: add clickable line content with configurable navigation behavior
+
 ## [0.5.0] - 2025-10-03
 
 ### Changes
