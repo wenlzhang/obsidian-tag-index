@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.3.0] - 2025-10-03
+
+### Changes
+
+- refactor: remove unused tag hierarchy sorting functionality
+- feat: replace auto-insert parent tags with persistent tag expansion state
+- feat: enhance tag tree UI with improved indentation and visual hierarchy
+- feat: implement hierarchical tag sorting and auto-insert parent tags
+- feat: implement hierarchical tag display with nested indentation and improved tag parsing
+- Improve code format
+
 ## [0.2.0] - 2025-06-27
 
 ### Changes
