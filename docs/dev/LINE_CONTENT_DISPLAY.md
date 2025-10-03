@@ -207,6 +207,23 @@ Users can toggle the feature:
 - Changes take effect immediately
 - View refreshes automatically when toggled
 
+#### Conditional visibility
+
+The "Line content click behavior" and "Cursor position" settings are only visible when "Show line content" is enabled. This creates a logical hierarchy:
+
+```
+Settings Tab:
+├─ Add new tags to top
+├─ Auto-open tag index panel
+├─ Show line content [Toggle]
+│   ├─ Line content click behavior [Only shown if enabled]
+│   └─ Cursor position [Only shown if enabled]
+└─ Advanced
+    └─ Debug mode
+```
+
+When the user disables "Show line content", the dependent settings automatically hide, reducing clutter and improving UX. When re-enabled, they reappear with their previously saved values.
+
 ## Performance considerations
 
 1. **Lazy loading**: Line content is only extracted when tags are expanded
