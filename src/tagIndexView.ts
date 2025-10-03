@@ -28,6 +28,7 @@ export class TagIndexView extends ItemView {
     tagContainer: HTMLElement;
     draggedTag: string | null = null;
     draggedElement: HTMLElement | null = null;
+    draggedNode: TreeNode | null = null;
     expandedTags: Set<string> = new Set(); // Track which tags are expanded
     expandedNodes: Set<string> = new Set(); // Track which nodes are expanded
     private metadataChangeHandler: (file: TFile) => void;
@@ -332,44 +333,50 @@ export class TagIndexView extends ItemView {
                 e.stopPropagation();
                 this.removeTag(node.fullPath);
             });
-
-            // Make draggable if it's an actual tag
-            headerEl.setAttribute("draggable", "true");
-            headerEl.addEventListener("dragstart", (e: DragEvent) => {
-                this.draggedTag = node.fullPath;
-                this.draggedElement = nodeEl;
-                nodeEl.addClass("tag-being-dragged");
-                if (e.dataTransfer) {
-                    e.dataTransfer.setData("text/plain", node.fullPath);
-                    e.dataTransfer.effectAllowed = "move";
-                }
-            });
-
-            headerEl.addEventListener("dragend", () => {
-                nodeEl.removeClass("tag-being-dragged");
-                this.draggedTag = null;
-                this.draggedElement = null;
-            });
-
-            nodeEl.addEventListener("dragover", (e: DragEvent) => {
-                e.preventDefault();
-                if (this.draggedTag && this.draggedTag !== node.fullPath) {
-                    nodeEl.addClass("tag-drag-over");
-                }
-            });
-
-            nodeEl.addEventListener("dragleave", () => {
-                nodeEl.removeClass("tag-drag-over");
-            });
-
-            nodeEl.addEventListener("drop", (e: DragEvent) => {
-                e.preventDefault();
-                nodeEl.removeClass("tag-drag-over");
-                if (this.draggedTag && this.draggedTag !== node.fullPath) {
-                    this.moveTag(this.draggedTag, node.fullPath);
-                }
-            });
         }
+
+        // Make all nodes draggable (both actual tags and intermediate nodes)
+        headerEl.setAttribute("draggable", "true");
+        headerEl.addEventListener("dragstart", (e: DragEvent) => {
+            this.draggedTag = node.fullPath;
+            this.draggedNode = node;
+            this.draggedElement = nodeEl;
+            nodeEl.addClass("tag-being-dragged");
+            if (e.dataTransfer) {
+                e.dataTransfer.setData("text/plain", node.fullPath);
+                e.dataTransfer.effectAllowed = "move";
+            }
+        });
+
+        headerEl.addEventListener("dragend", () => {
+            nodeEl.removeClass("tag-being-dragged");
+            this.draggedTag = null;
+            this.draggedNode = null;
+            this.draggedElement = null;
+        });
+
+        nodeEl.addEventListener("dragover", (e: DragEvent) => {
+            e.preventDefault();
+            if (this.draggedTag && this.draggedTag !== node.fullPath) {
+                nodeEl.addClass("tag-drag-over");
+            }
+        });
+
+        nodeEl.addEventListener("dragleave", () => {
+            nodeEl.removeClass("tag-drag-over");
+        });
+
+        nodeEl.addEventListener("drop", (e: DragEvent) => {
+            e.preventDefault();
+            nodeEl.removeClass("tag-drag-over");
+            if (
+                this.draggedTag &&
+                this.draggedTag !== node.fullPath &&
+                this.draggedNode
+            ) {
+                this.moveNodeOrTag(this.draggedNode, node);
+            }
+        });
 
         // Add children container
         const childrenContainer = nodeEl.createDiv({
@@ -451,6 +458,94 @@ export class TagIndexView extends ItemView {
             ? targetTag.position + 0.5
             : targetTag.position - 0.5;
         sourceTag.position = newPosition;
+
+        // Normalize positions to ensure they are consecutive integers
+        const normalizedTags = tags
+            .sort((a: ImportantTag, b: ImportantTag) => a.position - b.position)
+            .map((tag: ImportantTag, index: number) => ({
+                ...tag,
+                position: index,
+            }));
+
+        this.plugin.settings.importantTags = normalizedTags;
+        await this.plugin.saveSettings();
+        await this.renderTagsAndRestoreExpansion();
+    }
+
+    // Helper method to collect all descendant tags from a node
+    private collectDescendantTags(node: TreeNode): ImportantTag[] {
+        const descendants: ImportantTag[] = [];
+
+        if (node.isActualTag && node.tag) {
+            descendants.push(node.tag);
+        }
+
+        node.children.forEach((child) => {
+            descendants.push(...this.collectDescendantTags(child));
+        });
+
+        return descendants;
+    }
+
+    async moveNodeOrTag(
+        sourceNode: TreeNode,
+        targetNode: TreeNode,
+    ): Promise<void> {
+        // Collect all descendant tags from the source node
+        const descendantTags = this.collectDescendantTags(sourceNode);
+
+        if (descendantTags.length === 0) {
+            // No actual tags to move
+            return;
+        }
+
+        // Get all tags and create a working copy
+        const tags = this.plugin.settings.importantTags.map((tag) => ({
+            ...tag,
+        }));
+
+        // Find the target position
+        let targetPosition: number;
+        if (targetNode.isActualTag && targetNode.tag) {
+            targetPosition = targetNode.tag.position;
+        } else {
+            // For intermediate nodes, use the effective position
+            const targetDescendants = this.collectDescendantTags(targetNode);
+            if (targetDescendants.length > 0) {
+                targetPosition = Math.min(
+                    ...targetDescendants.map((t) => t.position),
+                );
+            } else {
+                return;
+            }
+        }
+
+        // Calculate the minimum position of source tags
+        const sourceMinPosition = Math.min(
+            ...descendantTags.map((t) => t.position),
+        );
+
+        // Determine if we're moving down or up
+        const isMovingDown = sourceMinPosition < targetPosition;
+
+        // Sort descendant tags by their current position to preserve relative order
+        const sortedDescendants = descendantTags.sort(
+            (a, b) => a.position - b.position,
+        );
+
+        // Assign new positions to the descendant tags
+        // We'll use fractional positions and then normalize
+        const basePosition = isMovingDown
+            ? targetPosition + 0.5
+            : targetPosition - 0.5;
+
+        sortedDescendants.forEach((descendant, index) => {
+            const tagIndex = tags.findIndex((t) => t.name === descendant.name);
+            if (tagIndex !== -1) {
+                // Assign positions with small increments to maintain order
+                tags[tagIndex].position = basePosition + index * 0.01;
+            }
+        });
 
         // Normalize positions to ensure they are consecutive integers
         const normalizedTags = tags
