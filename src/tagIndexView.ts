@@ -252,6 +252,7 @@ export class TagIndexView extends ItemView {
             const notesContainer = childrenContainer.createDiv({
                 cls: "tag-index-tag-notes",
             });
+            notesContainer.setAttribute("data-level", level.toString());
             this.populateNotesForTag(node.fullPath, notesContainer);
         }
 

@@ -31,48 +31,110 @@
   background-color: var(--background-secondary-alt);
 }
 
-/* Indentation based on level */
+/* Indentation based on level - scalable for unlimited levels */
+.tag-index-tree-item[data-level="0"] .tag-index-tree-item-self {
+  padding-left: 8px;
+}
+
 .tag-index-tree-item[data-level="1"] .tag-index-tree-item-self {
-  padding-left: 24px;
+  padding-left: calc(8px + 16px * 1);
 }
 
 .tag-index-tree-item[data-level="2"] .tag-index-tree-item-self {
-  padding-left: 40px;
+  padding-left: calc(8px + 16px * 2);
 }
 
 .tag-index-tree-item[data-level="3"] .tag-index-tree-item-self {
-  padding-left: 56px;
+  padding-left: calc(8px + 16px * 3);
 }
 
 .tag-index-tree-item[data-level="4"] .tag-index-tree-item-self {
-  padding-left: 72px;
+  padding-left: calc(8px + 16px * 4);
 }
 
-/* Connection lines */
+.tag-index-tree-item[data-level="5"] .tag-index-tree-item-self {
+  padding-left: calc(8px + 16px * 5);
+}
+
+.tag-index-tree-item[data-level="6"] .tag-index-tree-item-self {
+  padding-left: calc(8px + 16px * 6);
+}
+
+.tag-index-tree-item[data-level="7"] .tag-index-tree-item-self {
+  padding-left: calc(8px + 16px * 7);
+}
+
+.tag-index-tree-item[data-level="8"] .tag-index-tree-item-self {
+  padding-left: calc(8px + 16px * 8);
+}
+
+.tag-index-tree-item[data-level="9"] .tag-index-tree-item-self {
+  padding-left: calc(8px + 16px * 9);
+}
+
+.tag-index-tree-item[data-level="10"] .tag-index-tree-item-self {
+  padding-left: calc(8px + 16px * 10);
+}
+
+/* Connection lines - continuous vertical lines */
 .tag-index-tree-item::before {
   content: '';
   position: absolute;
   left: 0;
   top: 0;
-  bottom: 50%;
+  bottom: 0;
   width: 1px;
   background: var(--background-modifier-border);
 }
 
 .tag-index-tree-item[data-level="1"]::before {
-  left: 12px;
+  left: calc(4px + 16px * 0.5);
 }
 
 .tag-index-tree-item[data-level="2"]::before {
-  left: 28px;
+  left: calc(4px + 16px * 1.5);
 }
 
 .tag-index-tree-item[data-level="3"]::before {
-  left: 44px;
+  left: calc(4px + 16px * 2.5);
 }
 
+.tag-index-tree-item[data-level="4"]::before {
+  left: calc(4px + 16px * 3.5);
+}
+
+.tag-index-tree-item[data-level="5"]::before {
+  left: calc(4px + 16px * 4.5);
+}
+
+.tag-index-tree-item[data-level="6"]::before {
+  left: calc(4px + 16px * 5.5);
+}
+
+.tag-index-tree-item[data-level="7"]::before {
+  left: calc(4px + 16px * 6.5);
+}
+
+.tag-index-tree-item[data-level="8"]::before {
+  left: calc(4px + 16px * 7.5);
+}
+
+.tag-index-tree-item[data-level="9"]::before {
+  left: calc(4px + 16px * 8.5);
+}
+
+.tag-index-tree-item[data-level="10"]::before {
+  left: calc(4px + 16px * 9.5);
+}
+
+/* Only the last child stops the line at its midpoint */
 .tag-index-tree-item:last-child::before {
   bottom: 50%;
+}
+
+/* Extend line through expanded items with children */
+.tag-index-tree-item-children:not(.tag-index-display-none) ~ .tag-index-tree-item::before {
+  top: 0;
 }
 
 /* Chevron icon */
@@ -118,6 +180,63 @@
 /* Children container */
 .tag-index-tree-item-children {
   margin-left: 0;
+}
+
+/* Notes section - should be indented relative to the tag */
+.tag-index-tag-notes {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/* Indent notes based on their tree level - scalable for unlimited levels */
+.tag-index-tag-notes[data-level="0"] {
+  padding-left: calc(8px + 16px * 0 + 20px);
+}
+
+.tag-index-tag-notes[data-level="1"] {
+  padding-left: calc(8px + 16px * 1 + 20px);
+}
+
+.tag-index-tag-notes[data-level="2"] {
+  padding-left: calc(8px + 16px * 2 + 20px);
+}
+
+.tag-index-tag-notes[data-level="3"] {
+  padding-left: calc(8px + 16px * 3 + 20px);
+}
+
+.tag-index-tag-notes[data-level="4"] {
+  padding-left: calc(8px + 16px * 4 + 20px);
+}
+
+.tag-index-tag-notes[data-level="5"] {
+  padding-left: calc(8px + 16px * 5 + 20px);
+}
+
+.tag-index-tag-notes[data-level="6"] {
+  padding-left: calc(8px + 16px * 6 + 20px);
+}
+
+.tag-index-tag-notes[data-level="7"] {
+  padding-left: calc(8px + 16px * 7 + 20px);
+}
+
+.tag-index-tag-notes[data-level="8"] {
+  padding-left: calc(8px + 16px * 8 + 20px);
+}
+
+.tag-index-tag-notes[data-level="9"] {
+  padding-left: calc(8px + 16px * 9 + 20px);
+}
+
+.tag-index-tag-notes[data-level="10"] {
+  padding-left: calc(8px + 16px * 10 + 20px);
+}
+
+.tag-index-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .tag-index-tag-header {
@@ -187,8 +306,8 @@
   color: var(--text-normal);
 }
 
-/* Notes container within a tag */
-.tag-index-tag-notes {
+/* Notes container within a tag - OLD STYLE, KEEPING FOR COMPATIBILITY */
+.tag-index-tag-notes.legacy {
   padding-left: 32px;
   margin: 0px 0 4px 0;
   border-left: 1px solid var(--background-modifier-border);
@@ -261,17 +380,30 @@
   background-color: var(--background-secondary-alt);
 }
 
+/* Add a file icon before note names */
+.tag-index-note-item::before {
+  content: '📄';
+  font-size: 12px;
+  margin-right: 6px;
+  opacity: 0.6;
+}
+
 .tag-index-note-link {
   text-decoration: none;
-  color: var(--text-normal);
+  color: var(--text-accent-hover);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .tag-index-note-link:hover {
-  text-decoration: underline;
+  text-decoration: none; /* Prevent double underline */
+  border-bottom-color: var(--text-accent);
   color: var(--text-accent);
 }
 
