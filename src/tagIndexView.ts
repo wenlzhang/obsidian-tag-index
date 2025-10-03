@@ -463,14 +463,11 @@ export class TagIndexView extends ItemView {
 
     private showSortMenu(event: MouseEvent, buttonEl: HTMLElement): void {
         const menu = new Menu();
+        const currentMethod = this.plugin.settings.noteSortMethod;
 
         menu.addItem((item) => {
             item.setTitle("File name (A to Z)")
-                .setIcon(
-                    this.plugin.settings.noteSortMethod === "file-name-asc"
-                        ? "check"
-                        : "",
-                )
+                .setChecked(currentMethod === "file-name-asc")
                 .onClick(async () => {
                     await this.setSortMethod("file-name-asc");
                 });
@@ -478,11 +475,7 @@ export class TagIndexView extends ItemView {
 
         menu.addItem((item) => {
             item.setTitle("File name (Z to A)")
-                .setIcon(
-                    this.plugin.settings.noteSortMethod === "file-name-desc"
-                        ? "check"
-                        : "",
-                )
+                .setChecked(currentMethod === "file-name-desc")
                 .onClick(async () => {
                     await this.setSortMethod("file-name-desc");
                 });
@@ -492,11 +485,7 @@ export class TagIndexView extends ItemView {
 
         menu.addItem((item) => {
             item.setTitle("Modified time (new to old)")
-                .setIcon(
-                    this.plugin.settings.noteSortMethod === "modified-new"
-                        ? "check"
-                        : "",
-                )
+                .setChecked(currentMethod === "modified-new")
                 .onClick(async () => {
                     await this.setSortMethod("modified-new");
                 });
@@ -504,11 +493,7 @@ export class TagIndexView extends ItemView {
 
         menu.addItem((item) => {
             item.setTitle("Modified time (old to new)")
-                .setIcon(
-                    this.plugin.settings.noteSortMethod === "modified-old"
-                        ? "check"
-                        : "",
-                )
+                .setChecked(currentMethod === "modified-old")
                 .onClick(async () => {
                     await this.setSortMethod("modified-old");
                 });
@@ -518,11 +503,7 @@ export class TagIndexView extends ItemView {
 
         menu.addItem((item) => {
             item.setTitle("Created time (new to old)")
-                .setIcon(
-                    this.plugin.settings.noteSortMethod === "created-new"
-                        ? "check"
-                        : "",
-                )
+                .setChecked(currentMethod === "created-new")
                 .onClick(async () => {
                     await this.setSortMethod("created-new");
                 });
@@ -530,11 +511,7 @@ export class TagIndexView extends ItemView {
 
         menu.addItem((item) => {
             item.setTitle("Created time (old to new)")
-                .setIcon(
-                    this.plugin.settings.noteSortMethod === "created-old"
-                        ? "check"
-                        : "",
-                )
+                .setChecked(currentMethod === "created-old")
                 .onClick(async () => {
                     await this.setSortMethod("created-old");
                 });
