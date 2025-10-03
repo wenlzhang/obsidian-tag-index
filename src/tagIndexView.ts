@@ -232,14 +232,45 @@ export class TagIndexView extends ItemView {
         return root;
     }
 
+    // Helper method to get effective position for sorting
+    // For actual tags, returns their position
+    // For intermediate nodes, returns the minimum position of all descendant tags
+    private getEffectivePosition(node: TreeNode): number {
+        if (node.isActualTag && node.tag) {
+            return node.tag.position;
+        }
+
+        // For intermediate nodes, find minimum position among descendants
+        let minPosition = Infinity;
+        const findMinPosition = (n: TreeNode): void => {
+            if (n.isActualTag && n.tag) {
+                minPosition = Math.min(minPosition, n.tag.position);
+            }
+            n.children.forEach((child) => findMinPosition(child));
+        };
+
+        findMinPosition(node);
+        return minPosition === Infinity ? 0 : minPosition;
+    }
+
     private renderTree(
         nodes: Map<string, TreeNode>,
         container: HTMLElement,
         level: number,
     ): void {
-        const sortedNodes = Array.from(nodes.values()).sort((a, b) =>
-            a.name.localeCompare(b.name),
-        );
+        const sortedNodes = Array.from(nodes.values()).sort((a, b) => {
+            const posA = this.getEffectivePosition(a);
+            const posB = this.getEffectivePosition(b);
+
+            // Sort by position
+            if (posA !== posB) {
+                return posA - posB;
+            }
+
+            // If positions are equal (shouldn't happen for well-formed data),
+            // fall back to alphabetical sorting
+            return a.name.localeCompare(b.name);
+        });
 
         for (const node of sortedNodes) {
             this.renderNode(node, container, level);
@@ -777,8 +808,10 @@ export class TagIndexView extends ItemView {
             return false;
         }
 
-        // Create a new array with a shallow copy of the existing tags
-        const importantTags = [...this.plugin.settings.importantTags];
+        // Create a deep copy of the existing tags to avoid modifying original objects
+        const importantTags = this.plugin.settings.importantTags.map((tag) => ({
+            ...tag,
+        }));
 
         if (this.plugin.settings.addTagsToTop) {
             // When adding to top, we need to increment all positions first
